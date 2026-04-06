@@ -17,6 +17,7 @@ export {
   SimulatorNotAvailableError,
   InvalidIdempotencyKeyError,
 } from './error.js'
+export type { KycMissingField } from './error.js'
 
 // ─── Webhook types ────────────────────────────────────────────────────────────
 export type { UQPayWebhookEvent, WebhookOptions } from './webhooks.js'
@@ -147,9 +148,17 @@ export type {
   CardRechargeWithdrawParams,
   CardRechargeWithdrawResponse,
   ListCardsParams,
+  // Cards (new KYC)
+  CardholderRequiredFields,
   // Cardholders
   CardholderStatus,
+  KycLevel,
+  Gender,
+  IdvStatus,
   DeliveryAddress,
+  ResidentialAddress,
+  IdentityDocument,
+  KycVerification,
   CreateCardholderParams,
   CreateCardholderResponse,
   Cardholder,
@@ -171,8 +180,12 @@ export type {
   IssuingTransfer,
   // Products
   ProductStatus,
+  ProductRequiredField,
   CardProduct,
   ListProductsParams,
+  // Webhook payloads
+  CardholderKycStatusChangedPayload,
+  CardholderUpdatedPayload,
   // Reports
   CreateReportParams,
   CreateReportResponse,
@@ -229,6 +242,8 @@ export type {
 export type {
   Environment,
   LogLevel,
+  ErrorType,
+  WebhookEventType,
   PaginatedResponse,
   PaginationParams,
   RequestOptions,
@@ -237,5 +252,4 @@ export type {
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 export { generateIdempotencyKey } from './idempotency.js'
-export { PageIterator } from './pagination.js'
 export { SDK_VERSION } from './http.js'

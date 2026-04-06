@@ -12,10 +12,19 @@ export interface DiagnosticContext {
 
 // ─── Normalised API error body ────────────────────────────────────────────────
 
+export interface KycMissingField {
+  name: string
+  type: 'string' | 'object'
+  required: boolean
+  description?: string
+  fields?: KycMissingField[]
+}
+
 interface NormalisedBody {
   type: string
   code: string
   message: string
+  missing_fields?: KycMissingField[]
 }
 
 // ─── Base class ───────────────────────────────────────────────────────────────
@@ -35,6 +44,8 @@ export class UQPayError extends Error {
   readonly onBehalfOf: string | undefined
   readonly sdkVersion: string
   readonly retryCount: number
+  /** Present when type is 'cardholder_error' and code is 'kyc_insufficient' — lists the cardholder fields required by the product BIN. */
+  readonly missing_fields: KycMissingField[] | undefined
 
   constructor(
     body: NormalisedBody,
@@ -58,6 +69,7 @@ export class UQPayError extends Error {
     this.onBehalfOf = ctx.onBehalfOf
     this.sdkVersion = diag.sdkVersion
     this.retryCount = ctx.retryCount
+    this.missing_fields = body.missing_fields
   }
 }
 
@@ -157,11 +169,14 @@ function parseBody(raw: unknown, status: number): NormalisedBody {
 
   // Modern format: { type, code, message }
   if (typeof obj['type'] === 'string' && typeof obj['message'] === 'string') {
-    return {
+    const base = {
       type: obj['type'],
       code: typeof obj['code'] === 'string' ? obj['code'] : String(obj['code'] ?? ''),
       message: obj['message'],
     }
+    return Array.isArray(obj['missing_fields'])
+      ? { ...base, missing_fields: obj['missing_fields'] as KycMissingField[] }
+      : base
   }
 
   // Legacy format: { code: number, message: string }

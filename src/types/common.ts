@@ -53,6 +53,8 @@ export type WebhookEventType =
   | 'VIRTUAL'
   | 'RFI'
   | 'ONBOARDING'
+  | 'cardholder.kyc.status_changed'
+  | 'cardholder.updated'
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 

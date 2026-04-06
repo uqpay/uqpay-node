@@ -123,6 +123,8 @@ export interface CreatePaymentPayoutParams {
   payout_amount: string
   statement_descriptor: string
   internal_note?: string
+  /** Route payout funds to a UQPAY internal account instead of the configured external bank account. Both long and short account IDs are accepted. */
+  payout_account_id?: string
 }
 
 export interface PaymentPayout {

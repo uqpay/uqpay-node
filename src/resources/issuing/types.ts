@@ -16,6 +16,50 @@ export interface RiskControls {
   [key: string]: unknown
 }
 
+export type KycLevel = 'SIMPLIFIED' | 'STANDARD' | 'ENHANCED'
+
+export type Gender = 'MALE' | 'FEMALE' | 'OTHER'
+
+export type IdvStatus = 'PENDING' | 'PASSED' | 'FAILED'
+
+export interface ResidentialAddress {
+  country: string
+  city: string
+  line1: string
+  state?: string
+  line2?: string
+  district?: string
+  /** Address in English (required by some BINs) */
+  line_en?: string
+  postal_code?: string
+}
+
+export interface IdentityDocument {
+  type: string
+  number: string
+  /** Base64 encoded front side image of the identity document. */
+  front_file?: string
+  /** Base64 encoded back side image of the identity document. Required when type is ID_CARD. */
+  back_file?: string
+  /** Base64 encoded hand-held photo with the identity document. Required when type is PASSPORT. */
+  hand_file?: string
+}
+
+export interface KycVerification {
+  /** THIRD_PARTY: provide identity data directly. SUMSUB_REDIRECT: redirect to external IDV provider. */
+  method: 'THIRD_PARTY' | 'SUMSUB_REDIRECT'
+}
+
+export interface CardholderRequiredFields {
+  gender?: Gender
+  nationality?: string
+  phone_number?: string
+  date_of_birth?: string
+  residential_address?: ResidentialAddress
+  identity?: IdentityDocument
+  kyc_verification?: KycVerification
+}
+
 export interface CreateCardParams {
   card_currency: 'SGD' | 'USD'
   cardholder_id: string
@@ -27,6 +71,8 @@ export interface CreateCardParams {
   usage_type?: 'NORMAL' | 'ONE_TIME'
   auto_cancel_trigger?: 'ON_AUTH' | 'ON_CAPTURE'
   expiry_at?: string
+  /** Supplement missing cardholder KYC fields at card creation time. Required when the cardholder does not meet the product's KYC requirements. */
+  cardholder_required_fields?: CardholderRequiredFields
 }
 
 export interface CreateCardResponse {
@@ -35,6 +81,8 @@ export interface CreateCardResponse {
   create_time: string
   card_status: CardStatus
   order_status: OrderStatus
+  cardholder_status?: CardholderStatus
+  message?: string
 }
 
 export interface Card {
@@ -166,14 +214,22 @@ export interface CreateCardholderParams {
   country_code: string
   phone_number: string
   date_of_birth?: string
+  /** @deprecated Use residential_address instead */
   delivery_address?: DeliveryAddress
+  residential_address?: ResidentialAddress
   document_type?: 'pdf' | 'png' | 'jpg' | 'jpeg'
   document?: string
+  gender?: Gender
+  nationality?: string
+  identity?: IdentityDocument
+  kyc_verification?: KycVerification
 }
 
 export interface CreateCardholderResponse {
   cardholder_id: string
   cardholder_status: CardholderStatus
+  idv_verification_url?: string
+  idv_url_expires_at?: string
 }
 
 export interface Cardholder {
@@ -187,18 +243,32 @@ export interface Cardholder {
   date_of_birth?: string
   country_code: string
   phone_number: string
+  /** @deprecated Use residential_address instead */
   delivery_address?: DeliveryAddress
+  residential_address?: ResidentialAddress
   review_status?: string
+  gender?: Gender
+  nationality?: string
+  identity?: IdentityDocument
+  idv_status?: IdvStatus
+  idv_verification_url?: string
+  idv_url_expires_at?: string
 }
 
 export interface UpdateCardholderParams {
   country_code?: string
   email?: string
   phone_number?: string
+  /** @deprecated Use residential_address instead */
   delivery_address?: DeliveryAddress
+  residential_address?: ResidentialAddress
   document_type?: 'pdf' | 'png' | 'jpg' | 'jpeg'
   document?: string
   date_of_birth?: string
+  gender?: Gender
+  nationality?: string
+  identity?: IdentityDocument
+  kyc_verification?: KycVerification
 }
 
 export interface ListCardholdersParams {
@@ -330,6 +400,16 @@ export interface IssuingTransfer {
 
 export type ProductStatus = 'ENABLED' | 'DISABLED'
 
+export interface ProductRequiredField {
+  name: string
+  /** 'string' for scalar fields, 'object' for nested fields */
+  type: 'string' | 'object'
+  required: boolean
+  description?: string
+  /** Sub-fields when type is 'object' */
+  fields?: ProductRequiredField[]
+}
+
 export interface CardProduct {
   product_id: string
   mode_type: 'SHARE' | 'SINGLE'
@@ -342,11 +422,52 @@ export interface CardProduct {
   create_time?: string
   update_time?: string
   product_status: ProductStatus
+  kyc_level?: KycLevel
+  /** Cardholder fields required by this card BIN for KYC compliance. */
+  required_fields?: ProductRequiredField[]
 }
 
 export interface ListProductsParams {
   page_size: number
   page_number: number
+}
+
+// ─── Webhook Payloads ─────────────────────────────────────────────────────────
+
+/** Payload for event_type: 'cardholder.kyc.status_changed' */
+export interface CardholderKycStatusChangedPayload {
+  cardholder_id: string
+  email: string
+  first_name: string
+  last_name: string
+  date_of_birth: string
+  country_code: string
+  nationality: string
+  phone_number: string
+  cardholder_status: CardholderStatus
+  /** IDV verification status. Empty string if not applicable. */
+  idv_status: IdvStatus | ''
+  /** IDV provider name (e.g. 'SUMSUB'). Empty string if not applicable. */
+  idv_provider: string
+  create_time: string
+}
+
+/** Payload for event_type: 'cardholder.updated' */
+export interface CardholderUpdatedPayload {
+  cardholder_id: string
+  email: string
+  first_name: string
+  last_name: string
+  date_of_birth: string
+  country_code: string
+  nationality: string
+  phone_number: string
+  cardholder_status: CardholderStatus
+  /** IDV verification status. Empty string if not applicable. */
+  idv_status: IdvStatus | ''
+  /** IDV provider name (e.g. 'SUMSUB'). Empty string if not applicable. */
+  idv_provider: string
+  create_time: string
 }
 
 // ─── Reports ──────────────────────────────────────────────────────────────────
