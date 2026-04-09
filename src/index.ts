@@ -189,6 +189,11 @@ export type {
   // Reports
   CreateReportParams,
   CreateReportResponse,
+  // Auth Decision
+  AuthDecisionTransaction,
+  AuthDecisionResult,
+  AuthDecisionConfig,
+  AuthDecisionHandlerOptions,
 } from './resources/issuing/types.js'
 
 // ─── Payment resource types ───────────────────────────────────────────────────
@@ -249,6 +254,10 @@ export type {
   RequestOptions,
   UQPayClientConfig,
 } from './types/common.js'
+
+// ─── Auth Decision ───────────────────────────────────────────────────────────
+export { generateAuthDecisionKeyPair } from './crypto/pgp.js'
+export type { AuthDecisionKeyPairOptions, AuthDecisionKeyPair } from './crypto/pgp.js'
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 export { generateIdempotencyKey } from './idempotency.js'

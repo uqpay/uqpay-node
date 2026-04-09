@@ -7,3 +7,6 @@ coverage/
 superpowers/
 .claude
 .DS_Store
+docs/
+.idea/
+.vscode/   

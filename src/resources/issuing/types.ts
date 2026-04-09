@@ -481,3 +481,52 @@ export interface CreateReportParams {
 export interface CreateReportResponse {
   report_id: string
 }
+
+// ─── Authorization Decision ──────────────────────────────────────────────────
+
+export interface AuthDecisionTransaction {
+  transaction_id: string
+  transaction_type: number
+  card_id: string
+  processing_code: string
+  billing_amount: number
+  transaction_amount: number
+  auth_amount: number
+  date_of_transaction: string
+  billing_currency_code: string
+  transaction_currency_code: string
+  auth_currency_code: string
+  card_balance: number
+  merchant_id: string
+  merchant_name: string
+  merchant_category_code: string
+  merchant_city: string
+  merchant_country: string
+  terminal_id: string
+  pos_entry_mode: string
+  pos_condition_code: string
+  pin_entry_capability: string
+  retrieval_reference_number: string
+  system_trace_audit_number: string
+  acquiring_institution_country_code: string
+  acquiring_institution_id: string
+  wallet_type: string
+}
+
+export interface AuthDecisionResult {
+  response_code: string
+  partner_reference_id?: string
+}
+
+export interface AuthDecisionConfig {
+  /** PGP private key — armored ASCII string or file path (.asc / .pgp / .gpg) */
+  privateKey: string
+  /** UQPAY PGP public key — armored ASCII string or file path (.asc / .pgp / .gpg) */
+  uqpayPublicKey: string
+  passphrase?: string
+}
+
+export interface AuthDecisionHandlerOptions {
+  decide: (transaction: AuthDecisionTransaction) => Promise<AuthDecisionResult> | AuthDecisionResult
+  onError?: (error: Error) => void
+}

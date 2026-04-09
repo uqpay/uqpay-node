@@ -337,6 +337,51 @@ app.post('/webhooks', express.raw({ type: 'application/json' }), (req, res) => {
 
 The `rawBody` passed to `constructEvent` must be the **original request body string or Buffer** — not a parsed JSON object.
 
+## Authorization Decision (PGP)
+
+Handle real-time card transaction authorization decisions. UQPAY sends PGP-encrypted transactions to your endpoint; you decrypt, decide, and return an encrypted response.
+
+### Generate PGP Key Pair
+
+```ts
+import { generateAuthDecisionKeyPair } from '@uqpay/sdk'
+
+const { publicKey, privateKey } = await generateAuthDecisionKeyPair({
+  name: 'Acme Corp',
+  email: 'issuing.tech@acme.com',
+})
+// Send publicKey to UQPAY, save privateKey securely
+```
+
+### Configure and Create Handler
+
+```ts
+// Configure PGP keys (once after client initialization)
+// Accepts file paths (.asc/.pgp/.gpg) or armored key strings
+await client.issuing.authDecision.configure({
+  privateKey: './keys/my-private.asc',
+  uqpayPublicKey: './keys/uqpay-public.asc',
+  passphrase: process.env.PGP_PASSPHRASE, // optional
+})
+
+// Create handler — only write your business logic
+const handler = client.issuing.authDecision.createHandler({
+  decide: async (transaction) => {
+    // transaction contains: billing_amount, merchant_name, card_id, etc.
+    if (transaction.billing_amount > 10000) {
+      return { response_code: '51' } // Insufficient Funds
+    }
+    return { response_code: '00', partner_reference_id: 'ref-001' }
+  },
+  onError: (err) => console.error('Auth decision error:', err),
+})
+
+// Mount to Express
+app.post('/auth-decision', handler)
+```
+
+The SDK handles all PGP encryption/decryption and automatically injects `transaction_id` into the response.
+
 ## Error Handling
 
 All API errors throw typed error classes:
