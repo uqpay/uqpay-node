@@ -5,6 +5,19 @@ All notable changes to `@uqpay/sdk` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1]
+
+### Added
+
+- **Account Center — Create SubAccount (`INDIVIDUAL`):** the create types could not
+  express several fields the API requires, so a TypeScript caller could not build a
+  valid individual sub-account payload without `as any`. Added (all additive):
+  - `CreateSubAccountParams.proof_documents` (`proof_of_address` required; optional
+    `source_of_funds`, `proof_of_position_and_income`, `other_proof`).
+  - `IdentityVerification.face_docs` (mandatory for individuals).
+  - `expected_activity` now also accepts `internationally`, `turnover_monthly`,
+    `turnover_monthly_currency`, and `other_purpose`.
+
 ## [0.3.0]
 
 ### Fixed
