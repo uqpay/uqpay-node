@@ -6,7 +6,7 @@
 //   - 2026-03-19: employment_status, industry, job_title, company_name
 //   - 2026-07-02: gender, annual_income
 // Missing any of these makes Create SubAccount reject INDIVIDUAL requests.
-import type { IndividualInfo } from '../../src/resources/account/types.js'
+import type { IndividualInfo, CreateSubAccountParams } from '../../src/resources/account/types.js'
 
 // Keys of T that are present AND non-optional.
 type RequiredKeys<T> = {
@@ -55,3 +55,35 @@ void [
   _firstNameEnglish, _state, _employmentStatus, _industry, _jobTitle,
   _companyName, _gender, _annualIncome, _genderMale, _genderFemale, complete,
 ]
+
+// A TS customer must be able to express a COMPLETE individual Create SubAccount
+// payload through the public types — including identity_verification.face_docs,
+// the full expected_activity (internationally / turnover_monthly /
+// turnover_monthly_currency), and proof_documents. If any are absent from the
+// types, this literal triggers excess-property errors.
+const fullParams: CreateSubAccountParams = {
+  business_type: 'BANKING',
+  entity_type: 'INDIVIDUAL',
+  nickname: 'TS Customer',
+  individual_info: complete,
+  identity_verification: {
+    identification_type: 'PASSPORT',
+    identification_value: 'E12345678',
+    identity_docs: ['doc'],
+    face_docs: ['doc'],
+  },
+  expected_activity: {
+    account_purpose: ['PURCHASE'],
+    banking_countries: ['SG'],
+    banking_currencies: ['SGD'],
+    internationally: 1,
+    turnover_monthly: 'TM001',
+    turnover_monthly_currency: 'USD',
+  },
+  proof_documents: {
+    proof_of_address: ['doc'],
+  },
+  tos_acceptance: { ip: '203.0.113.42', date: '2026-06-24', user_agent: 'M' },
+}
+
+void fullParams

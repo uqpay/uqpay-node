@@ -102,6 +102,8 @@ export interface IdentityVerification {
   identification_type: 'PASSPORT' | 'NATIONAL_ID' | 'DRIVING_LICENSE'
   identification_value: string
   identity_docs: string[]
+  /** Face photo documents. Mandatory for INDIVIDUAL sub-accounts. */
+  face_docs?: string[]
 }
 
 export interface BusinessDetails {
@@ -135,10 +137,26 @@ export interface CreateSubAccountParams {
     shareholder_docs?: string[]
   }
   business_details?: BusinessDetails
+  /** Expected account activity. Required when `entity_type` is `INDIVIDUAL`. */
   expected_activity?: {
     account_purpose?: string[]
+    /** Required when `account_purpose` includes `OTHERS`. */
+    other_purpose?: string
     banking_countries?: string[]
     banking_currencies?: string[]
+    /** 0 = domestic only, 1 = international. */
+    internationally?: 0 | 1
+    /** Estimated monthly turnover tier, e.g. `TM001`. */
+    turnover_monthly?: string
+    turnover_monthly_currency?: string
+  }
+  /** KYC proof documents. Required when `entity_type` is `INDIVIDUAL`. */
+  proof_documents?: {
+    proof_of_address: string[]
+    /** Required when the sub-account applies for a Virtual Account. */
+    source_of_funds?: string[]
+    proof_of_position_and_income?: string[]
+    other_proof?: string[]
   }
   additional_documents?: {
     required_docs?: Array<{ profile_key: string; doc_str: string }>
