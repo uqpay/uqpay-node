@@ -30,6 +30,8 @@ export type {
   TosAcceptance,
   CompanyInfo,
   IndividualInfo,
+  IndividualGender,
+  IndividualEmploymentStatus,
   IdentityVerification,
   BusinessDetails,
   // Params

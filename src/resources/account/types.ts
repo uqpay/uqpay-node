@@ -58,6 +58,17 @@ export interface CompanyInfo {
   certification_of_incorporation: string[]
 }
 
+export type IndividualGender = 'MALE' | 'FEMALE'
+
+export type IndividualEmploymentStatus =
+  | 'Employed'
+  | 'Self-Employed'
+  | 'Unemployed'
+  | 'Student'
+  | 'Retired'
+  | 'Homemaker'
+  | 'Other'
+
 export interface IndividualInfo {
   first_name_english: string
   last_name_english: string
@@ -67,11 +78,24 @@ export interface IndividualInfo {
   phone_number: string
   email_address: string
   date_of_birth: string
+  /** Required for individual SubAccounts (effective 2026-07-02). */
+  gender: IndividualGender
   country_or_territory: string
   street_address: string
+  apartment_suite_or_floor?: string
   city: string
-  state?: string
+  state: string
   postal_code: string
+  /** Required for individual SubAccounts (effective 2026-03-19). */
+  employment_status: IndividualEmploymentStatus
+  /** Required for individual SubAccounts (effective 2026-03-19). See the Enum Reference for accepted values. */
+  industry: string
+  /** Required for individual SubAccounts (effective 2026-03-19). See the Enum Reference for accepted values. */
+  job_title: string
+  /** Required for individual SubAccounts (effective 2026-03-19). */
+  company_name: string
+  /** Individual's annual income in USD. Required for individual SubAccounts (effective 2026-07-02). */
+  annual_income: string
 }
 
 export interface IdentityVerification {
