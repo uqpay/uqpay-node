@@ -7,9 +7,18 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to verify and publish
+        required: true
+        type: string
 
 permissions:
   contents: read
+
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
 jobs:
   verify:
@@ -22,20 +31,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
 
       - name: Verify release tag and version
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: node scripts/check-release-version.mjs --tag "$GITHUB_REF_NAME"
+        if: github.event_name != 'pull_request'
+        run: node scripts/check-release-version.mjs --tag "$RELEASE_TAG"
 
       - name: Verify tag commit is on main
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: github.event_name != 'pull_request'
         run: |
           git fetch --no-tags origin main:refs/remotes/origin/main
-          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          TAG_SHA=$(git rev-list -n 1 "$RELEASE_TAG")
+          test "$(git rev-parse HEAD)" = "$TAG_SHA"
+          git merge-base --is-ancestor "$TAG_SHA" origin/main
 
       - name: Install dependencies
         run: npm ci
@@ -59,29 +71,29 @@ jobs:
         run: npm pack --dry-run --json
 
       - name: Verify artifact version
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: github.event_name != 'pull_request'
         run: |
-          node scripts/check-release-version.mjs --tag "$GITHUB_REF_NAME" --dist dist
-          mkdir -p .release-artifacts
-          npm pack --pack-destination .release-artifacts --json > .release-artifacts/pack.json
-          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('.release-artifacts/pack.json'))[0]; const v=require('./package.json').version; if(p.version!==v) throw new Error('packed version '+p.version+' != '+v)"
+          node scripts/check-release-version.mjs --tag "$RELEASE_TAG" --dist dist
+          mkdir -p release-artifacts
+          npm pack --pack-destination release-artifacts --json > release-artifacts/pack.json
+          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('release-artifacts/pack.json'))[0]; const v=require('./package.json').version; if(p.version!==v) throw new Error('packed version '+p.version+' != '+v)"
 
       - uses: actions/upload-artifact@v4
-        if: matrix.node-version == '22' && startsWith(github.ref, 'refs/tags/v')
+        if: matrix.node-version == '22' && github.event_name != 'pull_request'
         with:
           name: npm-package
-          path: .release-artifacts/*.tgz
+          path: release-artifacts/*.tgz
           if-no-files-found: error
 
   publish-npm:
     needs: verify
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: npm-package
-          path: .release-artifacts
+          path: release-artifacts
 
       - uses: actions/setup-node@v4
         with:
@@ -91,7 +103,7 @@ jobs:
       - name: Check whether npm version already exists
         id: registry
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${RELEASE_TAG#v}"
           if npm view "@uqpay/sdk@$VERSION" version --registry https://registry.npmjs.org >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
@@ -102,4 +114,4 @@ jobs:
         if: steps.registry.outputs.exists == 'false'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish .release-artifacts/*.tgz --access public
+        run: npm publish release-artifacts/*.tgz --access public
