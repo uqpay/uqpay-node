@@ -169,7 +169,7 @@ describe('AuthDecisionResource', () => {
     await new Promise((r) => setTimeout(r, 200))
 
     expect(onError).toHaveBeenCalledOnce()
-    expect(onError.mock.calls[0][0].message).toBe('business logic crashed')
+    expect(onError.mock.calls[0]![0]!.message).toBe('business logic crashed')
     // No response sent — let UQPAY's timeout strategy (delegate or decline) take effect
     expect(res.end).not.toHaveBeenCalled()
   })
@@ -239,7 +239,7 @@ describe('AuthDecisionResource', () => {
     await new Promise((r) => setTimeout(r, 200))
 
     expect(onError).toHaveBeenCalledOnce()
-    expect(onError.mock.calls[0][0].message).toMatch(/maximum size/)
+    expect(onError.mock.calls[0]![0]!.message).toMatch(/maximum size/)
     expect(res.end).not.toHaveBeenCalled()
   })
 
@@ -287,7 +287,7 @@ describe('AuthDecisionResource', () => {
     await new Promise((r) => setTimeout(r, 5000))
 
     expect(onError).toHaveBeenCalledOnce()
-    expect(onError.mock.calls[0][0].message).toMatch(/timed out/)
+    expect(onError.mock.calls[0]![0]!.message).toMatch(/timed out/)
     expect(res.end).not.toHaveBeenCalled()
   }, 10000)
 })

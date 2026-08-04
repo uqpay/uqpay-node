@@ -31,16 +31,17 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "test:types": "tsc --noEmit -p tsconfig.test.json",
+    "check:release-version": "node scripts/check-release-version.mjs",
     "lint": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
-    "@vitest/coverage-v8": "^2.1.0",
+    "@vitest/coverage-v8": "^4.1.10",
     "tsup": "^8.2.0",
     "typescript": "^5.4.5",
-    "vitest": "^2.1.0"
+    "vitest": "^4.1.10"
   },
   "dependencies": {
-    "openpgp": "^6.3.0"
+    "openpgp": "^6.3.1"
   }
 }
