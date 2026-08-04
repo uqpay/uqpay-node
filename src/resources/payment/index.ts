@@ -6,6 +6,7 @@ import { BankAccountsResource } from './bankAccounts.js'
 import { PaymentBalancesResource } from './balances.js'
 import { PaymentAttemptsResource } from './paymentAttempts.js'
 import { SettlementsResource } from './settlements.js'
+import { TerminalsResource } from './terminals.js'
 
 export class PaymentResource {
   readonly paymentIntents: PaymentIntentsResource
@@ -15,6 +16,7 @@ export class PaymentResource {
   readonly balances: PaymentBalancesResource
   readonly paymentAttempts: PaymentAttemptsResource
   readonly settlements: SettlementsResource
+  readonly terminals: TerminalsResource
 
   constructor(http: HttpClient, clientId: string) {
     this.paymentIntents = new PaymentIntentsResource(http, clientId)
@@ -24,6 +26,7 @@ export class PaymentResource {
     this.balances = new PaymentBalancesResource(http, clientId)
     this.paymentAttempts = new PaymentAttemptsResource(http, clientId)
     this.settlements = new SettlementsResource(http, clientId)
+    this.terminals = new TerminalsResource(http, clientId)
   }
 }
 

@@ -7,6 +7,7 @@ import { IssuingTransfersResource } from './transfers.js'
 import { ProductsResource } from './products.js'
 import { ReportsResource } from './reports.js'
 import { AuthDecisionResource } from './auth-decision.js'
+import { MerchantBrandsResource } from './merchantBrands.js'
 
 export class IssuingResource {
   readonly cards: CardsResource
@@ -17,6 +18,7 @@ export class IssuingResource {
   readonly products: ProductsResource
   readonly reports: ReportsResource
   readonly authDecision: AuthDecisionResource
+  readonly merchantBrands: MerchantBrandsResource
 
   constructor(http: HttpClient, baseUrl: string) {
     this.cards = new CardsResource(http, baseUrl)
@@ -27,6 +29,7 @@ export class IssuingResource {
     this.products = new ProductsResource(http)
     this.reports = new ReportsResource(http)
     this.authDecision = new AuthDecisionResource()
+    this.merchantBrands = new MerchantBrandsResource(http)
   }
 }
 

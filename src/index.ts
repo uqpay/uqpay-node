@@ -64,6 +64,12 @@ export type {
   EntityType,
   AccountStatus,
   VerificationStatus,
+  RfiStatus,
+  RfiAnswerItem,
+  RfiRequestItem,
+  Rfi,
+  ListRfisParams,
+  AnswerRfiParams,
 } from './resources/account/types.js'
 
 // ─── Supporting resource types ────────────────────────────────────────────────
@@ -150,6 +156,26 @@ export type {
   CardRechargeWithdrawParams,
   CardRechargeWithdrawResponse,
   ListCardsParams,
+  CardOrderResponse,
+  ElevateLimitParams,
+  ElevateLimitResponse,
+  NetworkProtectionActionCode,
+  EnrollNetworkProtectionParams,
+  RemoveNetworkProtectionParams,
+  NetworkProtectionResponse,
+  ResetPinParams,
+  ResetPinResponse,
+  ManageCardPinParams,
+  ManageCardPinResponse,
+  ListCardArtsParams,
+  CardArtItem,
+  CardArtListResponse,
+  SetDefaultCardArtParams,
+  SetDefaultCardArtResponse,
+  MerchantBrand,
+  ListMerchantBrandsParams,
+  ClaimUnsolicitedRefundParams,
+  ClaimUnsolicitedRefundResponse,
   // Cards (new KYC)
   CardholderRequiredFields,
   // Cardholders
@@ -234,6 +260,10 @@ export type {
   // Settlements
   Settlement,
   ListSettlementsParams,
+  RegisterTerminalParams,
+  RegisterTerminalResponse,
+  GetPinKeyParams,
+  GetPinKeyResponse,
 } from './resources/payment/types.js'
 
 // ─── Simulator resource types ─────────────────────────────────────────────────
@@ -251,6 +281,7 @@ export type {
   LogLevel,
   ErrorType,
   WebhookEventType,
+  WebhookEventName,
   PaginatedResponse,
   PaginationParams,
   RequestOptions,

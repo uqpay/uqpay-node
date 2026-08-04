@@ -4,7 +4,7 @@ Official Node.js SDK for the [UQPay API](https://docs.uqpay.com/).
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 22+
 - A UQPay account with API credentials
 
 ## Installation

@@ -26,6 +26,10 @@ export abstract class BaseResource {
     return this.http.request<T>({ method: 'DELETE', path }, options)
   }
 
+  protected _deleteWithBody<T>(path: string, body: unknown, options?: RequestOptions): Promise<T> {
+    return this.http.request<T>({ method: 'DELETE', path, body }, options)
+  }
+
   /** Serialises a params object to a query string (with leading `?`), omitting undefined values. */
   protected _qs(params: object): string {
     const s = new URLSearchParams(

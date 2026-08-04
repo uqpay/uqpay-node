@@ -8,6 +8,10 @@ import type {
   ActivateCardParams, ActivateCardResponse, AssignCardParams,
   PanTokenResponse, SecureIframeOptions, SecureIframeResult,
   CardRechargeWithdrawParams, CardRechargeWithdrawResponse,
+  CardOrderResponse, ElevateLimitParams, ElevateLimitResponse,
+  EnrollNetworkProtectionParams, RemoveNetworkProtectionParams, NetworkProtectionResponse,
+  ResetPinParams, ResetPinResponse, ManageCardPinParams, ManageCardPinResponse,
+  ListCardArtsParams, CardArtListResponse, SetDefaultCardArtParams, SetDefaultCardArtResponse,
 } from './types.js'
 
 export class CardsResource extends BaseResource {
@@ -70,5 +74,37 @@ export class CardsResource extends BaseResource {
 
   withdraw(id: string, params: CardRechargeWithdrawParams, options?: RequestOptions): Promise<CardRechargeWithdrawResponse> {
     return this._post<CardRechargeWithdrawResponse>(`/v1/issuing/cards/${id}/withdraw`, params, options)
+  }
+
+  retrieveOrder(id: string, options?: RequestOptions): Promise<CardOrderResponse> {
+    return this._get<CardOrderResponse>(`/v1/issuing/cards/${id}/order`, options)
+  }
+
+  elevateLimit(id: string, params: ElevateLimitParams, options?: RequestOptions): Promise<ElevateLimitResponse> {
+    return this._post<ElevateLimitResponse>(`/v1/issuing/cards/${id}/elevate_limit`, params, options)
+  }
+
+  enrollNetworkProtection(id: string, params: EnrollNetworkProtectionParams, options?: RequestOptions): Promise<NetworkProtectionResponse> {
+    return this._post<NetworkProtectionResponse>(`/v1/issuing/cards/${id}/risk`, params, options)
+  }
+
+  removeNetworkProtection(id: string, params: RemoveNetworkProtectionParams, options?: RequestOptions): Promise<NetworkProtectionResponse> {
+    return this._deleteWithBody<NetworkProtectionResponse>(`/v1/issuing/cards/${id}/risk`, params, options)
+  }
+
+  resetPin(params: ResetPinParams, options?: RequestOptions): Promise<ResetPinResponse> {
+    return this._post<ResetPinResponse>('/v1/issuing/cards/pin', params, options)
+  }
+
+  managePin(params: ManageCardPinParams, options?: RequestOptions): Promise<ManageCardPinResponse> {
+    return this._post<ManageCardPinResponse>('/v1/issuing/cards/manage/pin', params, options)
+  }
+
+  listArts(params: ListCardArtsParams = {}, options?: RequestOptions): Promise<CardArtListResponse> {
+    return this._get<CardArtListResponse>(`/v1/issuing/cards/arts${this._qs(params)}`, options)
+  }
+
+  setDefaultArt(params: SetDefaultCardArtParams, options?: RequestOptions): Promise<SetDefaultCardArtResponse> {
+    return this._post<SetDefaultCardArtResponse>('/v1/issuing/cards/arts/default', params, options)
   }
 }

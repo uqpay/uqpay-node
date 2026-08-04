@@ -257,3 +257,17 @@ export interface ListSettlementsParams {
   settled_start_time?: string
   settled_end_time?: string
 }
+export interface RegisterTerminalParams {
+  firm_code: '01' | '02' | '03' | '04' | '05'
+  firm_sn: string
+  terminal_model: string
+}
+
+export interface RegisterTerminalResponse {
+  create_time?: string
+  firm_sn?: string
+  terminal_id?: string
+}
+
+export interface GetPinKeyParams { terminal_id: string; prv_key: string }
+export interface GetPinKeyResponse { encrypt_pin_key: string; pin_key_expire: string; terminal_id: string }

@@ -194,6 +194,86 @@ export interface ListCardsParams {
   cardholder_id?: string
 }
 
+export interface CardOrderResponse {
+  card_id?: string
+  card_order_id?: string
+  order_type?: string
+  order_status?: OrderStatus
+  create_time?: string
+  update_time?: string
+  [key: string]: unknown
+}
+
+export interface ElevateLimitParams {
+  limit_amount: number
+  duration_in_days?: number
+}
+
+export interface ElevateLimitResponse {
+  card_id: string
+  card_order_id: string
+  order_status: 'PENDING'
+}
+
+export type NetworkProtectionActionCode = '04' | '41' | '43' | '46' | '54'
+
+export interface EnrollNetworkProtectionParams {
+  risk_control: 'network_protection'
+  action_code: NetworkProtectionActionCode
+}
+
+export interface RemoveNetworkProtectionParams {
+  risk_control: 'network_protection'
+}
+
+export interface NetworkProtectionResponse {
+  card_id?: string
+  card_number?: string
+  cardholder_id?: string
+  card_scheme?: string
+  enabled?: boolean
+  status?: string
+  action_code?: NetworkProtectionActionCode
+  definition?: string
+  update_time?: string | null
+}
+
+export interface ResetPinParams { card_id: string; pin: string }
+export interface ResetPinResponse { request_status: 'SUCCESS' }
+
+export type ManageCardPinParams =
+  | { card_id: string; type: 'SET'; pin: string; old_pin?: never }
+  | { card_id: string; type: 'RESET'; pin: string; old_pin: string }
+
+export interface ManageCardPinResponse {
+  card_id: string
+  card_order_id: string
+  create_time: string
+}
+
+export interface ListCardArtsParams { card_product_id?: string }
+export interface CardArtItem {
+  card_art_id: string
+  description: string
+  is_default: boolean
+  is_system_config: boolean
+}
+export interface CardArtListResponse { default_card_art_id: string; card_arts: CardArtItem[] }
+export interface SetDefaultCardArtParams { card_art_id: string }
+export interface SetDefaultCardArtResponse { default_card_art_id: string; updated_at: string }
+
+export interface MerchantBrand { merchant_code?: string; display_name?: string }
+export type ListMerchantBrandsParams = {
+  page_size: number
+  page_number: number
+} & (
+  | { display_name: string; merchant_code?: string }
+  | { display_name?: string; merchant_code: string }
+)
+
+export interface ClaimUnsolicitedRefundParams { related_transaction_id: string; remark?: string }
+export interface ClaimUnsolicitedRefundResponse { request_status?: 'SUCCESS' }
+
 // ─── Cardholders ──────────────────────────────────────────────────────────────
 
 export type CardholderStatus = 'FAILED' | 'PENDING' | 'SUCCESS' | 'INCOMPLETE'

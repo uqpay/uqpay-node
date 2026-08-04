@@ -1,13 +1,13 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { UQPayWebhookError } from './error.js'
-import type { WebhookEventType } from './types/common.js'
+import type { WebhookEventName, WebhookEventType } from './types/common.js'
 
 // ─── Event types ─────────────────────────────────────────────────────────────
 
 export interface UQPayWebhookEvent {
   version: string
   event_type: WebhookEventType
-  event_name: string
+  event_name: WebhookEventName
   event_id: string
   source_id?: string
   data: unknown
