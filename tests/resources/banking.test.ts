@@ -86,7 +86,7 @@ describe('BankingResource', () => {
     it('calls POST /v1/transfer', async () => {
       const apiFetch = mockJson({ transfer_id: 't-1', short_reference_id: 'REF1' }, 201)
       const resource = makeResource(apiFetch)
-      const result = await resource.transfers.create({ source_account_id: 'a1', target_account_id: 'a2', currency: 'USD', amount: 100, reason: 'test' })
+      const result = await resource.transfers.create({ source_account_id: 'a1', target_account_id: 'a2', currency: 'USD', amount: '100', reason: 'test' })
       expect(result.transfer_id).toBe('t-1')
       const url = apiFetch.mock.calls[0]?.[0] as string
       expect(url).toContain('/v1/transfer')
@@ -121,8 +121,21 @@ describe('BankingResource', () => {
         payment_method: 'LOCAL',
         first_name: 'John',
         last_name: 'Doe',
-        bank_details: { account_number: '123', currency: 'USD', bank_country_code: 'US' },
-        address: { country_code: 'US', city: 'New York', street_address: '123 Main St' },
+        bank_details: {
+          account_number: '123',
+          account_currency_code: 'USD',
+          account_holder: 'John Doe',
+          bank_name: 'Test Bank',
+          bank_address: '1 Bank Street',
+          bank_country_code: 'US',
+        },
+        address: {
+          country: 'US',
+          city: 'New York',
+          street_address: '123 Main St',
+          postal_code: '10001',
+          state: 'NY',
+        },
       })
       expect(result.beneficiary_id).toBe('ben-1')
     })
@@ -142,7 +155,7 @@ describe('BankingResource', () => {
     it('calls POST /v1/conversion/quote', async () => {
       const apiFetch = mockJson({ quote_id: 'q-1', sell_currency: 'USD', buy_currency: 'EUR', sell_amount: 100, buy_amount: 92 })
       const resource = makeResource(apiFetch)
-      const result = await resource.conversions.createQuote({ sell_currency: 'USD', buy_currency: 'EUR', conversion_date: '2024-01-01', sell_amount: 100 })
+      const result = await resource.conversions.createQuote({ sell_currency: 'USD', buy_currency: 'EUR', conversion_date: '2024-01-01', sell_amount: '100' })
       expect(result.quote_id).toBe('q-1')
       const url = apiFetch.mock.calls[0]?.[0] as string
       expect(url).toContain('/v1/conversion/quote')
