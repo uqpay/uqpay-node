@@ -5,6 +5,31 @@ All notable changes to `@uqpay/sdk` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0]
+
+This bootstrap alignment release establishes the shared stable `1.2` capability
+baseline used by all five UQPAY customer SDKs. It covers all 98 callable operations
+in the current business API contract; Ramp remains outside the SDK product scope.
+
+### Added
+
+- Connect RFI list, retrieve, and answer resources.
+- Issuing card limit, risk, PIN, ART, merchant-brand, and unsolicited-refund
+  release operations.
+- Payment terminal registration and PIN-key operations.
+- Typed webhook event names for the shared webhook envelope.
+
+### Changed
+
+- Node.js 22 or newer is now required (previously Node.js 20).
+- The package now follows the stable `1.x` public API compatibility policy.
+
+### Migration
+
+- Upgrade the runtime before installing this version: `npm install @uqpay/sdk@1.2.0`.
+- Code assigning arbitrary strings to `UQPayWebhookEvent.event_name` must use one
+  of the exported `WebhookEventName` values.
+
 ## [0.3.1]
 
 ### Added
