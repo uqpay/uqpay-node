@@ -1,6 +1,9 @@
 name: Release
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     tags:
       - 'v*'
@@ -11,6 +14,10 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['22', '24']
     steps:
       - uses: actions/checkout@v4
         with:
@@ -18,12 +25,14 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ matrix.node-version }}
 
       - name: Verify release tag and version
+        if: startsWith(github.ref, 'refs/tags/v')
         run: node scripts/check-release-version.mjs --tag "$GITHUB_REF_NAME"
 
       - name: Verify tag commit is on main
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           git fetch --no-tags origin main:refs/remotes/origin/main
           git merge-base --is-ancestor "$GITHUB_SHA" origin/main
@@ -46,7 +55,11 @@ jobs:
       - name: Build package
         run: npm run build
 
+      - name: Dry-run npm package
+        run: npm pack --dry-run --json
+
       - name: Verify artifact version
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           node scripts/check-release-version.mjs --tag "$GITHUB_REF_NAME" --dist dist
           mkdir -p .release-artifacts
@@ -54,6 +67,7 @@ jobs:
           node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('.release-artifacts/pack.json'))[0]; const v=require('./package.json').version; if(p.version!==v) throw new Error('packed version '+p.version+' != '+v)"
 
       - uses: actions/upload-artifact@v4
+        if: matrix.node-version == '22' && startsWith(github.ref, 'refs/tags/v')
         with:
           name: npm-package
           path: .release-artifacts/*.tgz
@@ -61,6 +75,7 @@ jobs:
 
   publish-npm:
     needs: verify
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -70,7 +85,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Check whether npm version already exists

@@ -43,7 +43,7 @@ export type ErrorType =
 
 // ─── Webhook Event Types ──────────────────────────────────────────────────────
 
-export type WebhookEventType =
+export type WebhookEventName =
   | 'ISSUING'
   | 'ACQUIRING'
   | 'DEPOSIT'
@@ -53,8 +53,14 @@ export type WebhookEventType =
   | 'VIRTUAL'
   | 'RFI'
   | 'ONBOARDING'
-  | 'cardholder.kyc.status_changed'
-  | 'cardholder.updated'
+  | (string & {})
+
+/**
+ * Webhook event types are server-extensible (for example
+ * `card.create.succeeded`). Keep this open so newly added events can be parsed
+ * without requiring an SDK release first.
+ */
+export type WebhookEventType = string
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 

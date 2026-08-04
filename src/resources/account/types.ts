@@ -388,3 +388,35 @@ export interface AdditionalDocument {
   /** 1 = required, 0 = optional */
   profile_option: 0 | 1
 }
+export type RfiStatus = 'SUBMITTED_PENDING' | 'REJECTED' | 'APPROVED' | 'ACTION_REQUIRED'
+
+export interface RfiAnswerItem {
+  key: string
+  type: 'ATTACHMENT'
+  attachments: string[]
+}
+
+export interface RfiRequestItem {
+  question: { key: string; comment?: string; type: 'ATTACHMENT' }
+  answer?: RfiAnswerItem
+}
+
+export interface Rfi {
+  account_id?: string
+  rfi_id?: string
+  status?: RfiStatus
+  create_time?: string
+  update_time?: string
+  request?: RfiRequestItem[]
+}
+
+export interface ListRfisParams {
+  page_size: number
+  page_number: number
+  status?: RfiStatus
+}
+
+export interface AnswerRfiParams {
+  rfi_id: string
+  answer: RfiAnswerItem[]
+}

@@ -10,7 +10,7 @@ function sign(body: string, timestamp: number): string {
 }
 
 const NOW = Math.floor(Date.now() / 1000)
-const BODY = JSON.stringify({ version: 'V1.6.0', event_type: 'ISSUING', event_name: 'card.create.succeeded', event_id: 'e1', source_id: 's1', data: {} })
+const BODY = JSON.stringify({ version: 'V1.6.0', event_name: 'ISSUING', event_type: 'card.create.succeeded', event_id: 'e1', source_id: 's1', data: {} })
 
 describe('WebhookVerifier', () => {
   const verifier = new WebhookVerifier(SECRET)
@@ -18,8 +18,8 @@ describe('WebhookVerifier', () => {
   it('verifies a valid signature and returns typed event', () => {
     const sig = sign(BODY, NOW)
     const event = verifier.constructEvent(BODY, { 'x-wk-signature': sig, 'x-wk-timestamp': String(NOW) })
-    expect(event.event_type).toBe('ISSUING')
-    expect(event.event_name).toBe('card.create.succeeded')
+    expect(event.event_name).toBe('ISSUING')
+    expect(event.event_type).toBe('card.create.succeeded')
     expect(event.event_id).toBe('e1')
   })
 
