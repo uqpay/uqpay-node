@@ -5,7 +5,7 @@ import type { TokenManager } from './auth.js'
 import type { Logger } from './logger.js'
 import type { RequestOptions, RequestContext } from './types/common.js'
 
-export const SDK_VERSION = '0.3.1'
+export const SDK_VERSION = '1.2.0'
 
 const TOKEN_EXPIRED_PATTERNS = [
   'token has expired',
