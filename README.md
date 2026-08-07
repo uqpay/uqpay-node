@@ -1,6 +1,6 @@
 # UQPay Node.js SDK
 
-Official Node.js SDK for the [UQPay API](https://docs.uqpay.com/).
+Official Node.js SDK for the [UQPAY API](https://developers.uqpay.com/).
 
 ## Requirements
 
@@ -45,7 +45,7 @@ const client = new UQPayClient({
 
 ## Authentication
 
-The SDK handles authentication automatically. It exchanges your `clientId` and `apiKey` for a token, caches it, and refreshes it before expiry. You do not need to manage tokens manually.
+The SDK handles authentication automatically. It exchanges your `clientId` and `apiKey` for a UQPAY Access Token, caches it, and retrieves a new Token before the current one expires. You do not need to manage Tokens manually.
 
 ## Resources
 
@@ -494,7 +494,7 @@ const client = new UQPayClient({
 
 ## Documentation
 
-Full API reference: [https://docs.uqpay.com/](https://docs.uqpay.com/)
+Full API reference: [https://developers.uqpay.com/](https://developers.uqpay.com/)
 
 ## License
 
