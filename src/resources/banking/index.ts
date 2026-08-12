@@ -6,6 +6,7 @@ import { PayoutsResource } from './payouts.js'
 import { BeneficiariesResource } from './beneficiaries.js'
 import { ConversionsResource } from './conversions.js'
 import { VirtualAccountsResource } from './virtualAccounts.js'
+import { VirtualAccountApplicationsResource } from './virtualAccountApplications.js'
 import { PaymentMethodsResource } from './paymentMethods.js'
 
 export class BankingResource {
@@ -16,6 +17,7 @@ export class BankingResource {
   readonly beneficiaries: BeneficiariesResource
   readonly conversions: ConversionsResource
   readonly virtualAccounts: VirtualAccountsResource
+  readonly virtualAccountApplications: VirtualAccountApplicationsResource
   readonly paymentMethods: PaymentMethodsResource
 
   constructor(http: HttpClient) {
@@ -26,6 +28,7 @@ export class BankingResource {
     this.beneficiaries = new BeneficiariesResource(http)
     this.conversions = new ConversionsResource(http)
     this.virtualAccounts = new VirtualAccountsResource(http)
+    this.virtualAccountApplications = new VirtualAccountApplicationsResource(http)
     this.paymentMethods = new PaymentMethodsResource(http)
   }
 }

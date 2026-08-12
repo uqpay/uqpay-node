@@ -1,5 +1,5 @@
 import { normaliseApiError, NetworkError, UQPayError } from './error.js'
-import { generateIdempotencyKey, validateIdempotencyKey } from './idempotency.js'
+import { generateIdempotencyKey, validateIdempotencyKey, validateOpaqueIdempotencyKey } from './idempotency.js'
 import { shouldRetry, computeDelay, parseRetryAfterMs } from './retry.js'
 import type { TokenManager } from './auth.js'
 import type { Logger } from './logger.js'
@@ -34,6 +34,8 @@ export interface InternalRequestOptions {
   baseUrl?: string
   /** If true, this is the token endpoint itself — skip auth injection + token retry. */
   isAuthEndpoint?: boolean
+  /** Endpoint-specific opaque idempotency key contract. Generated keys remain UUID v4. */
+  opaqueIdempotencyKey?: boolean
 }
 
 export class HttpClient {
@@ -65,7 +67,10 @@ export class HttpClient {
 
     // Build idempotency key — sent on all requests
     const override = reqOptions.headers?.['x-idempotency-key']
-    if (override) validateIdempotencyKey(override)
+    if (override) {
+      if (opts.opaqueIdempotencyKey) validateOpaqueIdempotencyKey(override)
+      else validateIdempotencyKey(override)
+    }
     const idempotencyKey = override ?? generateIdempotencyKey()
 
     const onBehalfOf = reqOptions.headers?.['x-on-behalf-of']

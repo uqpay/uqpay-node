@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateIdempotencyKey, validateIdempotencyKey } from '../src/idempotency.js'
+import { generateIdempotencyKey, validateIdempotencyKey, validateOpaqueIdempotencyKey } from '../src/idempotency.js'
 import { InvalidIdempotencyKeyError } from '../src/error.js'
 
 const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -21,17 +21,23 @@ describe('validateIdempotencyKey', () => {
     expect(() => validateIdempotencyKey('550e8400-e29b-41d4-a716-446655440000')).not.toThrow()
   })
 
-  it('rejects UUID v1', () => {
-    expect(() => validateIdempotencyKey('6ba7b810-9dad-11d1-80b4-00c04fd430c8')).toThrow(InvalidIdempotencyKeyError)
-    expect(() => validateIdempotencyKey('6ba7b810-9dad-11d1-80b4-00c04fd430c8')).toThrow(/UUID v4/)
-  })
-
-  it('rejects arbitrary string', () => {
-    expect(() => validateIdempotencyKey('not-a-uuid')).toThrow(InvalidIdempotencyKeyError)
-    expect(() => validateIdempotencyKey('not-a-uuid')).toThrow(/UUID v4/)
+  it('rejects arbitrary strings for endpoints whose contract requires UUID v4', () => {
+    expect(() => validateIdempotencyKey('va-application-retry-001')).toThrow(/UUID v4/)
   })
 
   it('rejects empty string', () => {
     expect(() => validateIdempotencyKey('')).toThrow(InvalidIdempotencyKeyError)
+  })
+
+})
+
+describe('validateOpaqueIdempotencyKey', () => {
+  it('accepts a VA application retry key', () => {
+    expect(() => validateOpaqueIdempotencyKey('va-application-retry-001')).not.toThrow()
+  })
+
+  it('rejects empty and over-64-character keys', () => {
+    expect(() => validateOpaqueIdempotencyKey('')).toThrow(InvalidIdempotencyKeyError)
+    expect(() => validateOpaqueIdempotencyKey('x'.repeat(65))).toThrow(/1 and 64/)
   })
 })

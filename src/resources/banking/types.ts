@@ -362,12 +362,95 @@ export interface ListConversionDatesParams {
 // ─── Virtual Accounts ─────────────────────────────────────────────────────────
 
 export interface CreateVirtualAccountParams {
+  country: string
   currency: string
-  payment_method?: 'LOCAL' | 'SWIFT'
+  payment_method?: 'LOCAL' | 'SWIFT' | '' | null
+  nickname?: string | null
 }
 
 export interface CreateVirtualAccountResponse {
+  data: VirtualAccountApplication
+}
+
+export type VirtualAccountApplicationStatus =
+  | 'SUBMITTED'
+  | 'PARTIALLY_COMPLETED'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CLOSED'
+
+export type VirtualAccountApplicationResultStatus =
+  | 'SUBMITTED'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'SKIPPED'
+  | 'CLOSED'
+
+export interface VirtualAccountApplicationError {
+  code: string
   message: string
+}
+
+export interface VirtualAccountClearingSystem {
+  type: string
+  value: string
+}
+
+export interface VirtualAccountApplicationBankDetail {
+  account_bank_id: string
+  account_holder: string
+  account_number: string
+  country_code: string
+  currency: string
+  bank_name: string
+  bank_address: string
+  clearing_system: VirtualAccountClearingSystem
+  status: 'ACTIVE' | 'CLOSED'
+  /** Always present; empty unless a CLOSED bank detail has a recorded reason. */
+  close_reason: string
+}
+
+export interface VirtualAccountApplicationResult {
+  payment_method: 'LOCAL' | 'SWIFT'
+  status: VirtualAccountApplicationResultStatus
+  virtual_accounts: VirtualAccountApplicationBankDetail[]
+  error: VirtualAccountApplicationError | null
+}
+
+export interface VirtualAccountApplication {
+  application_id: string
+  public_version: number
+  country: string
+  currency: string
+  status: VirtualAccountApplicationStatus
+  results: VirtualAccountApplicationResult[]
+}
+
+export interface VirtualAccountApplicationSummary {
+  application_id: string
+  public_version: number
+  country: string
+  currency: string
+  status: VirtualAccountApplicationStatus
+  created_at: string
+}
+
+export interface ListVirtualAccountApplicationsParams {
+  page_number: number
+  page_size: number
+  status?: VirtualAccountApplicationStatus
+  country?: string
+  currency?: string
+}
+
+export interface ListVirtualAccountApplicationsResponse {
+  total_pages: number
+  total_items: number
+  data: VirtualAccountApplicationSummary[]
+}
+
+export interface RetrieveVirtualAccountApplicationResponse {
+  data: VirtualAccountApplication
 }
 
 export interface VirtualAccount {

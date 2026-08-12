@@ -20,7 +20,12 @@ export {
 export type { KycMissingField } from './error.js'
 
 // ─── Webhook types ────────────────────────────────────────────────────────────
-export type { UQPayWebhookEvent, WebhookOptions } from './webhooks.js'
+export type {
+  UQPayWebhookEvent,
+  VirtualAccountApplicationWebhookVersion,
+  VirtualAccountApplicationWebhookEvent,
+  WebhookOptions,
+} from './webhooks.js'
 
 // ─── Account resource types ───────────────────────────────────────────────────
 export type {
@@ -121,6 +126,17 @@ export type {
   // Virtual Accounts
   CreateVirtualAccountParams,
   CreateVirtualAccountResponse,
+  VirtualAccountApplicationStatus,
+  VirtualAccountApplicationResultStatus,
+  VirtualAccountApplicationError,
+  VirtualAccountClearingSystem,
+  VirtualAccountApplicationBankDetail,
+  VirtualAccountApplicationResult,
+  VirtualAccountApplication,
+  VirtualAccountApplicationSummary,
+  ListVirtualAccountApplicationsParams,
+  ListVirtualAccountApplicationsResponse,
+  RetrieveVirtualAccountApplicationResponse,
   VirtualAccount,
   ListVirtualAccountsParams,
   // Payment Methods

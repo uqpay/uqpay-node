@@ -1,16 +1,26 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { UQPayWebhookError } from './error.js'
 import type { WebhookEventName, WebhookEventType } from './types/common.js'
+import type { VirtualAccountApplication } from './resources/banking/types.js'
 
 // ─── Event types ─────────────────────────────────────────────────────────────
 
-export interface UQPayWebhookEvent {
+export interface UQPayWebhookEvent<TData = unknown> {
   version: string
   event_type: WebhookEventType
   event_name: WebhookEventName
   event_id: string
   source_id?: string
-  data: unknown
+  data: TData
+}
+
+export type VirtualAccountApplicationWebhookVersion = 'V1.5.1' | 'V1.5.2' | 'V1.6.0'
+
+export type VirtualAccountApplicationWebhookEvent = UQPayWebhookEvent<VirtualAccountApplication> & {
+  version: VirtualAccountApplicationWebhookVersion
+  event_name: 'VIRTUAL'
+  event_type: 'virtual.account.create' | 'virtual.account.update' | 'virtual.account.closed'
+  source_id: string
 }
 
 // ─── Verifier options ─────────────────────────────────────────────────────────
@@ -39,10 +49,10 @@ export class WebhookVerifier {
    *   `app.use(express.raw({ type: 'application/json' }))`
    * @param headers - An object with `x-wk-signature` and `x-wk-timestamp` values.
    */
-  constructEvent(
+  constructEvent<TEvent extends UQPayWebhookEvent = UQPayWebhookEvent>(
     rawBody: string | Buffer,
     headers: Record<string, string | undefined>
-  ): UQPayWebhookEvent {
+  ): TEvent {
     // Type guard: reject parsed objects
     if (typeof rawBody === 'object' && !Buffer.isBuffer(rawBody)) {
       throw new UQPayWebhookError(
@@ -89,6 +99,6 @@ export class WebhookVerifier {
       throw new UQPayWebhookError('Webhook signature verification failed: signatures do not match')
     }
 
-    return JSON.parse(bodyStr) as UQPayWebhookEvent
+    return JSON.parse(bodyStr) as TEvent
   }
 }

@@ -143,6 +143,23 @@ describe('UQPayError', () => {
     expect(err.httpStatus).toBe(404)
   })
 
+  it('preserves the VA application HTTP 400 not-found contract', () => {
+    const err = normaliseApiError(
+      {
+        type: 'not_found',
+        code: 'virtual_account_application_not_found',
+        message: 'Virtual account application not found',
+      },
+      400, ctx,
+      { clientId: 'c1', environment: 'sandbox', sdkVersion: '0.1.0' }
+    )
+    expect(err).toBeInstanceOf(NotFoundError)
+    expect(err.httpStatus).toBe(400)
+    expect(err.type).toBe('not_found')
+    expect(err.code).toBe('virtual_account_application_not_found')
+    expect(err.message).toBe('Virtual account application not found')
+  })
+
   it('sets err.name to the subclass name', () => {
     const err = new AuthenticationError(
       { type: 'unauthorized_error', code: 'authentication_error', message: 'bad token' },

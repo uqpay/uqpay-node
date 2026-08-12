@@ -4,7 +4,12 @@ import type { CreateVirtualAccountParams, CreateVirtualAccountResponse, VirtualA
 
 export class VirtualAccountsResource extends BaseResource {
   create(params: CreateVirtualAccountParams, options?: RequestOptions): Promise<CreateVirtualAccountResponse> {
-    return this._post<CreateVirtualAccountResponse>('/v1/virtual/accounts', params, options)
+    return this.http.request<CreateVirtualAccountResponse>({
+      method: 'POST',
+      path: '/v1/virtual/accounts',
+      body: params,
+      opaqueIdempotencyKey: true,
+    }, options)
   }
 
   list(params: ListVirtualAccountsParams, options?: RequestOptions): Promise<PaginatedResponse<VirtualAccount>> {
