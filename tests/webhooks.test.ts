@@ -23,6 +23,16 @@ describe('WebhookVerifier', () => {
     expect(event.event_id).toBe('e1')
   })
 
+  it('verifies the millisecond timestamp emitted by Webhook Hub', () => {
+    const timestamp = Date.now()
+    const sig = sign(BODY, timestamp)
+    const event = verifier.constructEvent(BODY, {
+      'x-wk-signature': sig,
+      'x-wk-timestamp': String(timestamp),
+    })
+    expect(event.event_id).toBe('e1')
+  })
+
   it('preserves application-level VA source, version, results, and close reason', () => {
     const applicationId = '550e8400-e29b-41d4-a716-446655440000'
     const body = JSON.stringify({

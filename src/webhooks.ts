@@ -73,14 +73,17 @@ export class WebhookVerifier {
     }
 
     const timestamp = parseInt(timestampStr, 10)
+    const timestampSeconds = timestamp >= 1_000_000_000_000
+      ? Math.floor(timestamp / 1000)
+      : timestamp
     const now = Math.floor(Date.now() / 1000)
-    const diff = Math.abs(now - timestamp)
+    const diff = Math.abs(now - timestampSeconds)
 
     if (diff > this.tolerance) {
-      const tsIso = new Date(timestamp * 1000).toISOString()
+      const tsIso = new Date(timestampSeconds * 1000).toISOString()
       const nowIso = new Date(now * 1000).toISOString()
       throw new UQPayWebhookError(
-        `Webhook timestamp expired: received ${timestamp} (${tsIso}), ` +
+        `Webhook timestamp expired: received ${timestampStr} (${tsIso}), ` +
         `server time ${now} (${nowIso}), difference ${diff}s exceeds tolerance of ${this.tolerance}s`
       )
     }

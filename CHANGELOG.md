@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Webhook freshness validation accepts Webhook Hub's Unix-millisecond
+  `x-wk-timestamp` while retaining Unix-second compatibility and signing the
+  unmodified header value.
 - Create Virtual Account now requires `country`, accepts one `currency`, optional
   `LOCAL`/`SWIFT`/omitted method and nickname, and returns application data.
 - Create Virtual Account accepts the endpoint's opaque 1-64 character
