@@ -116,10 +116,28 @@ const conversion = await client.banking.conversions.create({
   quote_id: quote.quote_id,
 })
 
-// Virtual Accounts
-const va = await client.banking.virtualAccounts.create({
-  currency: 'SGD',
-  // ...
+// Submit an asynchronous Virtual Account application. Reuse the same key only
+// when replaying this normalized request for the same target account.
+const accepted = await client.banking.virtualAccounts.create(
+  { country: 'SG', currency: 'USD', payment_method: 'SWIFT', nickname: 'Collections' },
+  { headers: { 'x-idempotency-key': 'va-application-001' } }
+)
+console.log(accepted.data.application_id, accepted.data.public_version)
+
+// Applications are separate from issued Virtual Account bank details.
+const applications = await client.banking.virtualAccountApplications.list({
+  page_number: 1,
+  page_size: 50,
+  status: 'SUBMITTED',
+})
+const latest = await client.banking.virtualAccountApplications.retrieve(
+  accepted.data.application_id
+)
+
+// This existing endpoint remains the list of issued bank details.
+const issuedAccounts = await client.banking.virtualAccounts.list({
+  page_number: 1,
+  page_size: 50,
 })
 
 // Exchange Rates
@@ -336,6 +354,16 @@ app.post('/webhooks', express.raw({ type: 'application/json' }), (req, res) => {
 ```
 
 The `rawBody` passed to `constructEvent` must be the **original request body string or Buffer** — not a parsed JSON object.
+
+Virtual Account application events use `virtual.account.create`,
+`virtual.account.update`, and `virtual.account.closed`. Their `source_id` equals
+`data.application_id`. Deduplicate deliveries by `event_id`, then apply an event
+only when its `data.public_version` is greater than the version already stored.
+The webhook `data` has the same `VirtualAccountApplication` shape returned by
+Create and Retrieve; `close_reason` is always present and may be empty even when
+the bank detail is `CLOSED`. The verifier is version-agnostic and preserves the
+Hub's application DTO for supported subscription versions `V1.5.1`, `V1.5.2`,
+and `V1.6.0`.
 
 ## Authorization Decision (PGP)
 

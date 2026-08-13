@@ -119,11 +119,11 @@ export class SimulatorNotAvailableError extends Error {
 }
 
 export class InvalidIdempotencyKeyError extends Error {
-  constructor(key: string) {
-    super(
-      `Idempotency key "${key}" is not a valid UUID v4. ` +
-      `Generate one with crypto.randomUUID() or the generateIdempotencyKey() helper.`
-    )
+  constructor(key: string, contract: 'uuid-v4' | 'opaque-max-64' = 'uuid-v4') {
+    super(contract === 'opaque-max-64'
+      ? `Idempotency key "${key}" must contain between 1 and 64 characters.`
+      : `Idempotency key "${key}" is not a valid UUID v4. ` +
+        `Generate one with crypto.randomUUID() or the generateIdempotencyKey() helper.`)
     this.name = 'InvalidIdempotencyKeyError'
   }
 }
@@ -204,7 +204,9 @@ export function normaliseApiError(
 
   if (status === 401) return new AuthenticationError(body, status, ctx, diag)
   if (status === 403) return new ForbiddenError(body, status, ctx, diag)
-  if (status === 404) return new NotFoundError(body, status, ctx, diag)
+  // Resource-concealment contracts can use HTTP 400 with type=not_found for
+  // both absent and cross-account resources.
+  if (status === 404 || body.type === 'not_found') return new NotFoundError(body, status, ctx, diag)
   if (status === 409) return new ConflictError(body, status, ctx, diag)
   if (status === 429) return new RateLimitError(body, status, ctx, diag)
   if (status >= 500) return new ServerError(body, status, ctx, diag)

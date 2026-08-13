@@ -5,6 +5,28 @@ All notable changes to `@uqpay/sdk` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Typed Virtual Account application summaries, complete application/result/error/
+  bank-detail models, and separate list/retrieve application resources.
+- Typed application-level `virtual.account.create`, `virtual.account.update`, and
+  `virtual.account.closed` webhook events with `public_version` ordering.
+
+### Changed
+
+- Webhook freshness validation accepts Webhook Hub's Unix-millisecond
+  `x-wk-timestamp` while retaining Unix-second compatibility and signing the
+  unmodified header value.
+- Create Virtual Account now requires `country`, accepts one `currency`, optional
+  `LOCAL`/`SWIFT`/omitted method and nickname, and returns application data.
+- Create Virtual Account continues to forward `x-idempotency-key`; caller-supplied
+  values now follow the endpoint's opaque 1-64 character contract. Other
+  endpoints retain UUID-v4 validation and generated keys remain UUID v4.
+- HTTP 400 application concealment errors with `type=not_found` map to
+  `NotFoundError` without changing their type, code, message, or HTTP status.
+
 ## [1.2.0]
 
 This bootstrap alignment release establishes the shared stable `1.2` capability

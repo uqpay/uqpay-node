@@ -183,6 +183,74 @@ describe('BankingResource', () => {
     })
   })
 
+  describe('virtualAccounts.create', () => {
+    it('submits the application contract with idempotency and connected-account headers', async () => {
+      const apiFetch = mockJson({
+        data: {
+          application_id: 'app-1', public_version: 1, country: 'SG', currency: 'USD',
+          status: 'SUBMITTED', results: [],
+        },
+      })
+      const resource = makeResource(apiFetch)
+      const result = await resource.virtualAccounts.create(
+        { country: 'SG', currency: 'USD', payment_method: 'SWIFT', nickname: 'Collections' },
+        { headers: { 'x-idempotency-key': 'va-retry-001', 'x-on-behalf-of': 'acct-sub' } }
+      )
+      expect(result.data.application_id).toBe('app-1')
+      const [url, init] = apiFetch.mock.calls[0] as [string, RequestInit]
+      expect(url).toContain('/v1/virtual/accounts')
+      expect(JSON.parse(init.body as string)).toEqual({
+        country: 'SG', currency: 'USD', payment_method: 'SWIFT', nickname: 'Collections',
+      })
+      expect((init.headers as Record<string, string>)['x-idempotency-key']).toBe('va-retry-001')
+      expect((init.headers as Record<string, string>)['x-on-behalf-of']).toBe('acct-sub')
+      expect((init.headers as Record<string, string>)['x-request-id']).toBeUndefined()
+
+      const replay = await resource.virtualAccounts.create(
+        { country: 'SG', currency: 'USD', payment_method: 'SWIFT', nickname: 'Collections' },
+        { headers: { 'x-idempotency-key': 'va-retry-001', 'x-on-behalf-of': 'acct-sub' } }
+      )
+      expect(replay.data.application_id).toBe(result.data.application_id)
+      const replayHeaders = apiFetch.mock.calls[1]?.[1]?.headers as Record<string, string>
+      expect(replayHeaders['x-idempotency-key']).toBe('va-retry-001')
+    })
+  })
+
+  describe('virtualAccountApplications.list', () => {
+    it('calls the application list endpoint without confusing issued accounts', async () => {
+      const apiFetch = mockJson({ total_pages: 1, total_items: 0, data: [] })
+      const resource = makeResource(apiFetch)
+      await resource.virtualAccountApplications.list({
+        page_number: 1, page_size: 50, status: 'SUBMITTED', country: 'SG', currency: 'USD',
+      })
+      const url = apiFetch.mock.calls[0]?.[0] as string
+      expect(url).toContain('/v1/virtual/applications?')
+      expect(url).toContain('page_number=1')
+      expect(url).toContain('page_size=50')
+      expect(url).toContain('status=SUBMITTED')
+      expect(url).not.toContain('/v1/virtual/accounts')
+    })
+  })
+
+  describe('virtualAccountApplications.retrieve', () => {
+    it('calls the application detail endpoint and preserves the response envelope', async () => {
+      const apiFetch = mockJson({
+        data: {
+          application_id: 'app/unsafe', public_version: 3, country: 'BH', currency: 'GBP',
+          status: 'CLOSED', results: [],
+        },
+      })
+      const resource = makeResource(apiFetch)
+      const result = await resource.virtualAccountApplications.retrieve('app/unsafe', {
+        headers: { 'x-on-behalf-of': 'acct-sub' },
+      })
+      expect(result.data.public_version).toBe(3)
+      const [url, init] = apiFetch.mock.calls[0] as [string, RequestInit]
+      expect(url).toContain('/v1/virtual/applications/app%2Funsafe')
+      expect((init.headers as Record<string, string>)['x-on-behalf-of']).toBe('acct-sub')
+    })
+  })
+
   describe('paymentMethods.list', () => {
     it('calls GET /v1/beneficiaries/paymentmethods', async () => {
       const apiFetch = mockJson([])

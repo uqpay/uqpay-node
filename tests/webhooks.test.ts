@@ -23,6 +23,81 @@ describe('WebhookVerifier', () => {
     expect(event.event_id).toBe('e1')
   })
 
+  it('verifies the millisecond timestamp emitted by Webhook Hub', () => {
+    const timestamp = Date.now()
+    const sig = sign(BODY, timestamp)
+    const event = verifier.constructEvent(BODY, {
+      'x-wk-signature': sig,
+      'x-wk-timestamp': String(timestamp),
+    })
+    expect(event.event_id).toBe('e1')
+  })
+
+  it('preserves application-level VA source, version, results, and close reason', () => {
+    const applicationId = '550e8400-e29b-41d4-a716-446655440000'
+    const body = JSON.stringify({
+      version: 'V1.6.0',
+      event_name: 'VIRTUAL',
+      event_type: 'virtual.account.closed',
+      event_id: 'event-closed',
+      source_id: applicationId,
+      data: {
+        application_id: applicationId,
+        public_version: 3,
+        country: 'BH',
+        currency: 'GBP',
+        status: 'CLOSED',
+        results: [{
+          payment_method: 'SWIFT',
+          status: 'CLOSED',
+          virtual_accounts: [{
+            account_bank_id: 'bank-1', account_holder: 'Merchant', account_number: '001',
+            country_code: 'BH', currency: 'GBP', bank_name: 'Bank', bank_address: 'Address',
+            clearing_system: { type: 'bic_swift', value: 'BANKBHBM' },
+            status: 'CLOSED', close_reason: '',
+          }],
+          error: null,
+        }],
+      },
+    })
+    const event = verifier.constructEvent(body, {
+      'x-wk-signature': sign(body, NOW),
+      'x-wk-timestamp': String(NOW),
+    })
+    expect(event.source_id).toBe(applicationId)
+    expect((event.data as { application_id: string }).application_id).toBe(applicationId)
+    expect((event.data as { public_version: number }).public_version).toBe(3)
+    expect((event.data as { results: Array<{ virtual_accounts: Array<{ close_reason: string }> }> })
+      .results[0]?.virtual_accounts[0]?.close_reason).toBe('')
+  })
+
+  it.each(['V1.5.1', 'V1.5.2', 'V1.6.0'])(
+    'passes through the application DTO for supported Hub version %s',
+    (version) => {
+      const body = JSON.stringify({
+        version,
+        event_name: 'VIRTUAL',
+        event_type: 'virtual.account.update',
+        event_id: `event-${version}`,
+        source_id: 'application-1',
+        data: {
+          application_id: 'application-1', public_version: 2, country: 'SG', currency: 'USD',
+          status: 'FAILED', results: [{
+            payment_method: 'SWIFT', status: 'FAILED', virtual_accounts: [],
+            error: { code: 'VA_PROVISIONING_FAILED', message: 'Virtual account provisioning failed' },
+          }],
+        },
+      })
+      const event = verifier.constructEvent(body, {
+        'x-wk-signature': sign(body, NOW),
+        'x-wk-timestamp': String(NOW),
+      })
+      expect(event.version).toBe(version)
+      expect((event.data as { application_id: string }).application_id).toBe(event.source_id)
+      expect((event.data as { public_version: number }).public_version).toBe(2)
+    }
+  )
+
   it('throws on invalid signature', () => {
     expect(() =>
       verifier.constructEvent(BODY, { 'x-wk-signature': 'bad_sig', 'x-wk-timestamp': String(NOW) })
