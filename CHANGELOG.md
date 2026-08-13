@@ -21,9 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unmodified header value.
 - Create Virtual Account now requires `country`, accepts one `currency`, optional
   `LOCAL`/`SWIFT`/omitted method and nickname, and returns application data.
-- Create Virtual Account accepts the endpoint's opaque 1-64 character
-  idempotency keys; other endpoints retain UUID-v4 validation and generated keys
-  remain UUID v4.
+- Create Virtual Account continues to forward `x-idempotency-key`; caller-supplied
+  values now follow the endpoint's opaque 1-64 character contract. Other
+  endpoints retain UUID-v4 validation and generated keys remain UUID v4.
 - HTTP 400 application concealment errors with `type=not_found` map to
   `NotFoundError` without changing their type, code, message, or HTTP status.
 
