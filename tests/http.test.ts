@@ -1,6 +1,13 @@
 import { describe, it, expect, vi } from 'vitest'
 import { HttpClient } from '../src/http.js'
-import { AuthenticationError, NetworkError, NotFoundError, ServerError, ValidationError } from '../src/error.js'
+import {
+  AuthenticationError,
+  NetworkError,
+  NotFoundError,
+  ReconcileRequiredError,
+  ServerError,
+  ValidationError,
+} from '../src/error.js'
 import { Logger } from '../src/logger.js'
 import { TokenManager } from '../src/auth.js'
 
@@ -136,6 +143,148 @@ describe('HttpClient', () => {
     expect(result).toEqual({ id: 'retried' })
     expect(apiFetch).toHaveBeenCalledTimes(2)
     expect(tokenFetch).toHaveBeenCalledTimes(2)  // initial + refresh after 401
+  })
+
+  it('reuses one automatic idempotency key after token refresh on a write', async () => {
+    const tokenFetch = makeTokenFetch()
+    const tm = makeTokenManager(tokenFetch)
+    await tm.getToken()
+
+    const keys: string[] = []
+    const apiFetch = vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
+      keys.push((init?.headers as Record<string, string>)['x-idempotency-key'] ?? '')
+      return Promise.resolve(keys.length === 1 ? {
+        ok: false, status: 401,
+        headers: { get: () => null },
+        json: async () => ({ error: 'token has expired' }),
+        text: async (): Promise<string> => '{"error":"token has expired"}',
+      } : {
+        ok: true, status: 200,
+        headers: { get: () => null },
+        json: async () => ({ id: 'retried' }),
+        text: async (): Promise<string> => '{"id":"retried"}',
+      })
+    })
+
+    const client = new HttpClient('https://api.example.com', tm, new Logger('none'), 'cid1', '0.1.0', 30_000, apiFetch as typeof globalThis.fetch)
+    await client.request({ method: 'POST', path: '/v1/write', body: { amount: '1.00' } })
+    expect(keys).toHaveLength(2)
+    expect(keys[0]).toMatch(/^[0-9a-f-]{36}$/i)
+    expect(keys[1]).toBe(keys[0])
+  })
+
+  it('reuses one automatic idempotency key across a 429 write retry', async () => {
+    vi.useFakeTimers()
+    try {
+      const tokenFetch = makeTokenFetch()
+      const tm = makeTokenManager(tokenFetch)
+      const keys: string[] = []
+      const apiFetch = vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
+        keys.push((init?.headers as Record<string, string>)['x-idempotency-key'] ?? '')
+        return Promise.resolve(keys.length === 1 ? {
+          ok: false, status: 429,
+          headers: { get: () => null },
+          json: async () => ({ message: 'rate limited' }),
+          text: async (): Promise<string> => '{"message":"rate limited"}',
+        } : {
+          ok: true, status: 200,
+          headers: { get: () => null },
+          json: async () => ({ id: 'ok' }),
+          text: async (): Promise<string> => '{"id":"ok"}',
+        })
+      })
+
+      const client = new HttpClient('https://api.example.com', tm, new Logger('none'), 'cid1', '0.1.0', 30_000, apiFetch as typeof globalThis.fetch)
+      const pending = client.request({ method: 'POST', path: '/v1/write', body: {} })
+      await vi.runAllTimersAsync()
+      await pending
+      expect(keys).toHaveLength(2)
+      expect(keys[1]).toBe(keys[0])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('preserves a caller idempotency key across a 429 write retry', async () => {
+    vi.useFakeTimers()
+    try {
+      const tokenFetch = makeTokenFetch()
+      const tm = makeTokenManager(tokenFetch)
+      const keys: string[] = []
+      const apiFetch = vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
+        keys.push((init?.headers as Record<string, string>)['x-idempotency-key'] ?? '')
+        return Promise.resolve(keys.length === 1 ? {
+          ok: false, status: 429,
+          headers: { get: () => null },
+          json: async () => ({ message: 'rate limited' }),
+          text: async (): Promise<string> => '{"message":"rate limited"}',
+        } : {
+          ok: true, status: 200,
+          headers: { get: () => null },
+          json: async () => ({ id: 'ok' }),
+          text: async (): Promise<string> => '{"id":"ok"}',
+        })
+      })
+
+      const client = new HttpClient('https://api.example.com', tm, new Logger('none'), 'cid1', '0.1.0', 30_000, apiFetch as typeof globalThis.fetch)
+      const pending = client.request(
+        { method: 'POST', path: '/v1/write', body: {} },
+        { headers: { 'x-idempotency-key': '550e8400-e29b-41d4-a716-446655440000' } }
+      )
+      await vi.runAllTimersAsync()
+      await pending
+      expect(keys).toEqual([
+        '550e8400-e29b-41d4-a716-446655440000',
+        '550e8400-e29b-41d4-a716-446655440000',
+      ])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('requires reconciliation instead of replaying a write after 5xx', async () => {
+    const tokenFetch = makeTokenFetch()
+    const tm = makeTokenManager(tokenFetch)
+    const apiFetch = makeApiFetch(500, { message: 'internal error' })
+    const client = new HttpClient('https://api.example.com', tm, new Logger('none'), 'cid1', '0.1.0', 30_000, apiFetch as typeof globalThis.fetch)
+
+    const error = await client.request({ method: 'POST', path: '/v1/write', body: {} }).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ReconcileRequiredError)
+    expect(error).toMatchObject({
+      type: 'reconcile_required', reason: 'server_error', method: 'POST',
+      path: '/v1/write', httpStatus: 500, retryCount: 0,
+    })
+    if (!(error instanceof ReconcileRequiredError)) throw error
+    expect(error.idempotencyKey).toMatch(/^[0-9a-f-]{36}$/i)
+    expect(apiFetch).toHaveBeenCalledOnce()
+  })
+
+  it('requires reconciliation instead of replaying an ambiguous write network failure', async () => {
+    const tokenFetch = makeTokenFetch()
+    const tm = makeTokenManager(tokenFetch)
+    const apiFetch = vi.fn().mockRejectedValue(new TypeError('connection closed'))
+    const client = new HttpClient('https://api.example.com', tm, new Logger('none'), 'cid1', '0.1.0', 30_000, apiFetch as typeof globalThis.fetch)
+
+    const error = await client.request({ method: 'DELETE', path: '/v1/write' }).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ReconcileRequiredError)
+    expect(error).toMatchObject({ reason: 'network_error', method: 'DELETE', path: '/v1/write' })
+    expect(apiFetch).toHaveBeenCalledOnce()
+  })
+
+  it('requires reconciliation when a write response cannot be read', async () => {
+    const tokenFetch = makeTokenFetch()
+    const tm = makeTokenManager(tokenFetch)
+    const apiFetch = vi.fn().mockResolvedValue({
+      ok: true, status: 200,
+      headers: { get: () => 'text/plain' },
+      text: async () => { throw new Error('body truncated') },
+    })
+    const client = new HttpClient('https://api.example.com', tm, new Logger('none'), 'cid1', '0.1.0', 30_000, apiFetch as typeof globalThis.fetch)
+
+    const error = await client.request({ method: 'PUT', path: '/v1/write', body: {} }).catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ReconcileRequiredError)
+    expect(error).toMatchObject({ reason: 'response_read_error', method: 'PUT', httpStatus: 200 })
+    expect(apiFetch).toHaveBeenCalledOnce()
   })
 
   it('does NOT retry on IP whitelist 401', async () => {

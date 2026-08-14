@@ -104,6 +104,41 @@ export class NetworkError extends Error {
   }
 }
 
+export type ReconcileReason =
+  | 'network_error'
+  | 'timeout'
+  | 'response_read_error'
+  | 'server_error'
+
+/**
+ * A mutating request may have reached the API, but its remote outcome is
+ * unknown. Reconcile resource state before deciding whether to retry.
+ */
+export class ReconcileRequiredError extends Error {
+  readonly type = 'reconcile_required'
+  readonly method: string
+  readonly path: string
+  readonly idempotencyKey: string
+  readonly reason: ReconcileReason
+  readonly httpStatus: number | undefined
+  readonly retryCount: number
+
+  constructor(
+    reason: ReconcileReason,
+    ctx: RequestContext,
+    httpStatus?: number
+  ) {
+    super('Request outcome is unknown; reconcile remote state before retrying.')
+    this.name = 'ReconcileRequiredError'
+    this.method = ctx.method
+    this.path = ctx.path
+    this.idempotencyKey = ctx.idempotencyKey ?? ''
+    this.reason = reason
+    this.httpStatus = httpStatus
+    this.retryCount = ctx.retryCount
+  }
+}
+
 export class UQPayWebhookError extends Error {
   constructor(message: string) {
     super(message)

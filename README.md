@@ -449,6 +449,7 @@ import {
   RateLimitError,
   ServerError,
   NetworkError,
+  ReconcileRequiredError,
   SimulatorNotAvailableError,
 } from '@uqpay/sdk'
 
@@ -463,6 +464,13 @@ try {
     console.log('Rate limited, will retry automatically')
   } else if (err instanceof NetworkError) {
     console.log('Network error:', err.message)
+  } else if (err instanceof ReconcileRequiredError) {
+    console.log('Check remote state before retrying:', {
+      method: err.method,
+      path: err.path,
+      idempotencyKey: err.idempotencyKey,
+      reason: err.reason,
+    })
   } else if (err instanceof SimulatorNotAvailableError) {
     console.log('Simulator is only available in sandbox')
   }
@@ -480,7 +488,9 @@ All `UQPayError` subclasses expose:
 
 ## Idempotency
 
-All requests automatically include a UUID idempotency key. To provide your own:
+All requests automatically include a UUID idempotency key. The SDK reuses the
+same key for every safe retry belonging to one logical request. To provide your
+own:
 
 ```ts
 await client.account.subAccounts.create(params, {
@@ -498,7 +508,12 @@ await client.account.accounts.retrieve('acc-123', {
 
 ## Retries
 
-The SDK automatically retries failed requests (server errors, rate limits, network errors) with exponential backoff. Configure globally or per-request:
+The SDK automatically retries read requests after rate limits, server errors,
+and network errors. Mutating requests retry only when the API explicitly rejects
+them before processing, such as an expired token or HTTP 429. A write with an
+ambiguous network, timeout, response-read, or HTTP 5xx outcome throws
+`ReconcileRequiredError`; inspect remote state before deciding whether to retry.
+Configure the retry limit globally or per request:
 
 ```ts
 // Global
