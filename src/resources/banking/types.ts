@@ -418,6 +418,10 @@ export interface VirtualAccountApplicationResult {
 }
 
 export interface VirtualAccountApplication {
+  /** UUID of the account that owns the application. */
+  account_id: string
+  /** "0" for a main account; its main account ID for a connected account. */
+  direct_id: string
   application_id: string
   public_version: number
   country: string
@@ -427,6 +431,10 @@ export interface VirtualAccountApplication {
 }
 
 export interface VirtualAccountApplicationSummary {
+  /** UUID of the account that owns the application. */
+  account_id: string
+  /** "0" for a main account; its main account ID for a connected account. */
+  direct_id: string
   application_id: string
   public_version: number
   country: string

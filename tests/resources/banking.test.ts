@@ -187,6 +187,7 @@ describe('BankingResource', () => {
     it('submits the application contract with idempotency and connected-account headers', async () => {
       const apiFetch = mockJson({
         data: {
+          account_id: 'acct-sub', direct_id: 'acct-main',
           application_id: 'app-1', public_version: 1, country: 'SG', currency: 'USD',
           status: 'SUBMITTED', results: [],
         },
@@ -197,6 +198,8 @@ describe('BankingResource', () => {
         { headers: { 'x-idempotency-key': 'va-retry-001', 'x-on-behalf-of': 'acct-sub' } }
       )
       expect(result.data.application_id).toBe('app-1')
+      expect(result.data.account_id).toBe('acct-sub')
+      expect(result.data.direct_id).toBe('acct-main')
       const [url, init] = apiFetch.mock.calls[0] as [string, RequestInit]
       expect(url).toContain('/v1/virtual/accounts')
       expect(JSON.parse(init.body as string)).toEqual({
@@ -218,11 +221,21 @@ describe('BankingResource', () => {
 
   describe('virtualAccountApplications.list', () => {
     it('calls the application list endpoint without confusing issued accounts', async () => {
-      const apiFetch = mockJson({ total_pages: 1, total_items: 0, data: [] })
+      const apiFetch = mockJson({
+        total_pages: 1,
+        total_items: 1,
+        data: [{
+          account_id: 'acct-main', direct_id: '0', application_id: 'app-summary',
+          public_version: 1, country: 'SG', currency: 'USD', status: 'SUBMITTED',
+          created_at: '2026-08-14T00:00:00Z',
+        }],
+      })
       const resource = makeResource(apiFetch)
-      await resource.virtualAccountApplications.list({
+      const result = await resource.virtualAccountApplications.list({
         page_number: 1, page_size: 50, status: 'SUBMITTED', country: 'SG', currency: 'USD',
       })
+      expect(result.data[0]?.account_id).toBe('acct-main')
+      expect(result.data[0]?.direct_id).toBe('0')
       const url = apiFetch.mock.calls[0]?.[0] as string
       expect(url).toContain('/v1/virtual/applications?')
       expect(url).toContain('page_number=1')
@@ -236,6 +249,7 @@ describe('BankingResource', () => {
     it('calls the application detail endpoint and preserves the response envelope', async () => {
       const apiFetch = mockJson({
         data: {
+          account_id: 'acct-sub', direct_id: 'acct-main',
           application_id: 'app/unsafe', public_version: 3, country: 'BH', currency: 'GBP',
           status: 'CLOSED', results: [],
         },
@@ -245,6 +259,8 @@ describe('BankingResource', () => {
         headers: { 'x-on-behalf-of': 'acct-sub' },
       })
       expect(result.data.public_version).toBe(3)
+      expect(result.data.account_id).toBe('acct-sub')
+      expect(result.data.direct_id).toBe('acct-main')
       const [url, init] = apiFetch.mock.calls[0] as [string, RequestInit]
       expect(url).toContain('/v1/virtual/applications/app%2Funsafe')
       expect((init.headers as Record<string, string>)['x-on-behalf-of']).toBe('acct-sub')

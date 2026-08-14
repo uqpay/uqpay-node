@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0]
+
+This major release replaces the previous Virtual Account Create and webhook
+contracts with the Virtual Account application lifecycle contract. Existing
+Virtual Account integrations must migrate before adopting this version.
+
 ### Added
 
 - Typed Virtual Account application summaries, complete application/result/error/
@@ -26,6 +32,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   endpoints retain UUID-v4 validation and generated keys remain UUID v4.
 - HTTP 400 application concealment errors with `type=not_found` map to
   `NotFoundError` without changing their type, code, message, or HTTP status.
+
+### Fixed
+
+- Restored the required `account_id` and `direct_id` fields on successful
+  Virtual Account Create/Retrieve data, List summaries, and application events for `virtual.account.create`,
+  `virtual.account.update`, and `virtual.account.closed` across Hub versions
+  `V1.5.1`, `V1.5.2`, and `V1.6.0`. `account_id` is the owning account UUID;
+  `direct_id` is an ordinary string (`"0"` for main accounts). Archived
+  pre-restoration webhook payloads can be typed explicitly with
+  `LegacyVirtualAccountApplicationWebhookEvent`.
+
+### Breaking
+
+- Existing Create Virtual Account callers must add `country`, replace a currency
+  list with one `currency`, and parse HTTP 200 application data instead of the
+  previous HTTP 202 `message` and `request_id` response.
+- Virtual Account webhook consumers must correlate by `application_id`, process
+  complete application data, and use `public_version` for ordering.
+
+### Migration
+
+- Install with `npm install @uqpay/sdk@2.0.0` and follow the
+  [Virtual Account migration guide](https://developers.uqpay.com/global-account/v1.6/guide/migrate-to-virtual-account-applications).
 
 ## [1.2.0]
 
