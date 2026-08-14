@@ -360,8 +360,10 @@ Virtual Account application events use `virtual.account.create`,
 `data.application_id`. Deduplicate deliveries by `event_id`, then apply an event
 only when its `data.public_version` is greater than the version already stored.
 Webhook `data` restores the required routing fields `account_id` and `direct_id`
-alongside the application fields. These two fields are webhook-only: Gateway
-Create, List, and Retrieve application responses do not contain them.
+alongside the application fields. This release types them only on webhook data.
+Sandbox REST payloads may currently include them, but the Developer Docs REST
+contract is still pending; Create, List, and Retrieve public types therefore do
+not expose them yet.
 `close_reason` is always present and may be empty even when the bank detail is
 `CLOSED`. The verifier is version-agnostic and preserves the Hub's application
 DTO for supported subscription versions `V1.5.1`, `V1.5.2`, and `V1.6.0`.

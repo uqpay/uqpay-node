@@ -17,8 +17,8 @@ export interface UQPayWebhookEvent<TData = unknown> {
 export type VirtualAccountApplicationWebhookVersion = 'V1.5.1' | 'V1.5.2' | 'V1.6.0'
 
 /**
- * Webhook-only application data. The routing fields are intentionally absent
- * from Gateway Create, List, and Retrieve application DTOs.
+ * Application webhook data with restored routing fields. The SDK exposes these
+ * fields here while their REST public contract remains pending.
  */
 export interface VirtualAccountApplicationWebhookData extends VirtualAccountApplication {
   /** UUID of the account that owns the Virtual Account application. */

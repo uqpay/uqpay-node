@@ -39,9 +39,11 @@ type RequiredKeys<T> = {
 }[keyof T]
 type HasRequiredWebhookRoutingFields =
   'account_id' | 'direct_id' extends RequiredKeys<VirtualAccountApplicationWebhookData> ? true : never
-type GatewayRoutingFieldLeak = Extract<keyof VirtualAccountApplication, 'account_id' | 'direct_id'>
+// This release intentionally changes webhook types only. Keep REST public types
+// unchanged until account_id/direct_id have a published Developer Docs contract.
+type PendingRestPublicContractFields = Extract<keyof VirtualAccountApplication, 'account_id' | 'direct_id'>
 const requiredWebhookRoutingFields: HasRequiredWebhookRoutingFields = true
-const noGatewayRoutingFieldLeak: GatewayRoutingFieldLeak extends never ? true : never = true
+const restPublicContractStillPending: PendingRestPublicContractFields extends never ? true : never = true
 
 declare const verifier: WebhookVerifier
 const parsed = verifier.constructEvent<VirtualAccountApplicationWebhookEvent>('', {})
@@ -52,6 +54,6 @@ const legacyApplicationId: string = legacyEvent.data.application_id
 
 void [
   create, list, version, closeReason, eventVersion, applicationSource, webhookVersion,
-  accountId, directId, requiredWebhookRoutingFields, noGatewayRoutingFieldLeak,
+  accountId, directId, requiredWebhookRoutingFields, restPublicContractStillPending,
   parsedVersion, legacyApplicationId,
 ]
