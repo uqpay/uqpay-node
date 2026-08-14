@@ -359,11 +359,31 @@ Virtual Account application events use `virtual.account.create`,
 `virtual.account.update`, and `virtual.account.closed`. Their `source_id` equals
 `data.application_id`. Deduplicate deliveries by `event_id`, then apply an event
 only when its `data.public_version` is greater than the version already stored.
-The webhook `data` has the same `VirtualAccountApplication` shape returned by
-Create and Retrieve; `close_reason` is always present and may be empty even when
-the bank detail is `CLOSED`. The verifier is version-agnostic and preserves the
-Hub's application DTO for supported subscription versions `V1.5.1`, `V1.5.2`,
-and `V1.6.0`.
+Webhook `data` restores the required routing fields `account_id` and `direct_id`
+alongside the application fields. These two fields are webhook-only: Gateway
+Create, List, and Retrieve application responses do not contain them.
+`close_reason` is always present and may be empty even when the bank detail is
+`CLOSED`. The verifier is version-agnostic and preserves the Hub's application
+DTO for supported subscription versions `V1.5.1`, `V1.5.2`, and `V1.6.0`.
+
+```ts
+import type { VirtualAccountApplicationWebhookEvent } from '@uqpay/sdk'
+
+const event = client.webhooks.constructEvent<VirtualAccountApplicationWebhookEvent>(
+  rawBody,
+  headers,
+)
+
+console.log(event.data.account_id) // account on which the application event occurred
+console.log(event.data.direct_id)  // owning/direct account routing context
+```
+
+New deliveries should use `VirtualAccountApplicationWebhookEvent`, where both
+routing fields are required. To read archived payloads captured before the Hub
+fields were restored, use the explicit
+`LegacyVirtualAccountApplicationWebhookEvent` compatibility type. Signature
+verification remains pass-through and does not mutate or synthesize missing
+payload fields.
 
 ## Authorization Decision (PGP)
 

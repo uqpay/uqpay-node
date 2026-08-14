@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createHmac } from 'node:crypto'
 import { WebhookVerifier } from '../src/webhooks.js'
+import type {
+  LegacyVirtualAccountApplicationWebhookEvent,
+  VirtualAccountApplicationWebhookEvent,
+} from '../src/webhooks.js'
 import { UQPayWebhookError } from '../src/error.js'
 
 const SECRET = 'whsec_test_secret'
@@ -11,6 +15,15 @@ function sign(body: string, timestamp: number): string {
 
 const NOW = Math.floor(Date.now() / 1000)
 const BODY = JSON.stringify({ version: 'V1.6.0', event_name: 'ISSUING', event_type: 'card.create.succeeded', event_id: 'e1', source_id: 's1', data: {} })
+const VA_VERSIONS = ['V1.5.1', 'V1.5.2', 'V1.6.0'] as const
+const VA_EVENT_TYPES = [
+  'virtual.account.create',
+  'virtual.account.update',
+  'virtual.account.closed',
+] as const
+const VA_EVENT_MATRIX = VA_VERSIONS.flatMap(version =>
+  VA_EVENT_TYPES.map(eventType => [version, eventType] as const)
+)
 
 describe('WebhookVerifier', () => {
   const verifier = new WebhookVerifier(SECRET)
@@ -42,6 +55,8 @@ describe('WebhookVerifier', () => {
       event_id: 'event-closed',
       source_id: applicationId,
       data: {
+        account_id: 'account-connected',
+        direct_id: 'account-main',
         application_id: applicationId,
         public_version: 3,
         country: 'BH',
@@ -60,43 +75,88 @@ describe('WebhookVerifier', () => {
         }],
       },
     })
-    const event = verifier.constructEvent(body, {
+    const event = verifier.constructEvent<VirtualAccountApplicationWebhookEvent>(body, {
       'x-wk-signature': sign(body, NOW),
       'x-wk-timestamp': String(NOW),
     })
     expect(event.source_id).toBe(applicationId)
-    expect((event.data as { application_id: string }).application_id).toBe(applicationId)
-    expect((event.data as { public_version: number }).public_version).toBe(3)
-    expect((event.data as { results: Array<{ virtual_accounts: Array<{ close_reason: string }> }> })
-      .results[0]?.virtual_accounts[0]?.close_reason).toBe('')
+    expect(event.data.application_id).toBe(applicationId)
+    expect(event.data.public_version).toBe(3)
+    expect(event.data.account_id).toBe('account-connected')
+    expect(event.data.direct_id).toBe('account-main')
+    expect(event.data.results[0]?.virtual_accounts[0]?.close_reason).toBe('')
   })
 
-  it.each(['V1.5.1', 'V1.5.2', 'V1.6.0'])(
-    'passes through the application DTO for supported Hub version %s',
-    (version) => {
+  it.each(VA_EVENT_MATRIX)(
+    'restores webhook routing fields for Hub version %s event %s',
+    (version, eventType) => {
+      const result = eventType === 'virtual.account.create'
+        ? { payment_method: 'SWIFT', status: 'SUBMITTED', virtual_accounts: [], error: null }
+        : eventType === 'virtual.account.update'
+          ? {
+              payment_method: 'SWIFT', status: 'FAILED', virtual_accounts: [],
+              error: { code: 'VA_PROVISIONING_FAILED', message: 'Virtual account provisioning failed' },
+            }
+          : {
+              payment_method: 'SWIFT', status: 'CLOSED', error: null,
+              virtual_accounts: [{
+                account_bank_id: 'bank-1', account_holder: 'Merchant', account_number: '001',
+                country_code: 'SG', currency: 'USD', bank_name: 'Bank', bank_address: 'Address',
+                clearing_system: { type: 'bic_swift', value: 'BANKSGSG' },
+                status: 'CLOSED', close_reason: '',
+              }],
+            }
+      const status = eventType === 'virtual.account.create'
+        ? 'SUBMITTED'
+        : eventType === 'virtual.account.update' ? 'FAILED' : 'CLOSED'
       const body = JSON.stringify({
         version,
         event_name: 'VIRTUAL',
-        event_type: 'virtual.account.update',
-        event_id: `event-${version}`,
+        event_type: eventType,
+        event_id: `event-${version}-${eventType}`,
         source_id: 'application-1',
         data: {
+          account_id: 'account-1', direct_id: 'direct-1',
           application_id: 'application-1', public_version: 2, country: 'SG', currency: 'USD',
-          status: 'FAILED', results: [{
-            payment_method: 'SWIFT', status: 'FAILED', virtual_accounts: [],
-            error: { code: 'VA_PROVISIONING_FAILED', message: 'Virtual account provisioning failed' },
-          }],
+          status, results: [result],
         },
       })
-      const event = verifier.constructEvent(body, {
+      const event = verifier.constructEvent<VirtualAccountApplicationWebhookEvent>(body, {
         'x-wk-signature': sign(body, NOW),
         'x-wk-timestamp': String(NOW),
       })
       expect(event.version).toBe(version)
-      expect((event.data as { application_id: string }).application_id).toBe(event.source_id)
-      expect((event.data as { public_version: number }).public_version).toBe(2)
+      expect(event.event_type).toBe(eventType)
+      expect(event.data.application_id).toBe(event.source_id)
+      expect(event.data.public_version).toBe(2)
+      expect(event.data.account_id).toBe('account-1')
+      expect(event.data.direct_id).toBe('direct-1')
     }
   )
+
+  it('keeps archived pre-restoration events readable through the explicit legacy type', () => {
+    const body = JSON.stringify({
+      version: 'V1.6.0',
+      event_name: 'VIRTUAL',
+      event_type: 'virtual.account.update',
+      event_id: 'event-before-routing-fields-were-restored',
+      source_id: 'application-legacy',
+      data: {
+        application_id: 'application-legacy', public_version: 2, country: 'SG', currency: 'USD',
+        status: 'FAILED', results: [{
+          payment_method: 'SWIFT', status: 'FAILED', virtual_accounts: [],
+          error: { code: 'VA_PROVISIONING_FAILED', message: 'Virtual account provisioning failed' },
+        }],
+      },
+    })
+    const event = verifier.constructEvent<LegacyVirtualAccountApplicationWebhookEvent>(body, {
+      'x-wk-signature': sign(body, NOW),
+      'x-wk-timestamp': String(NOW),
+    })
+    expect(event.data.application_id).toBe('application-legacy')
+    expect('account_id' in event.data).toBe(false)
+    expect('direct_id' in event.data).toBe(false)
+  })
 
   it('throws on invalid signature', () => {
     expect(() =>

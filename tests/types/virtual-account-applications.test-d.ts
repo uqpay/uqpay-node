@@ -1,7 +1,9 @@
 import type {
   CreateVirtualAccountParams,
   VirtualAccountApplication,
+  VirtualAccountApplicationWebhookData,
   VirtualAccountApplicationWebhookEvent,
+  LegacyVirtualAccountApplicationWebhookEvent,
   ListVirtualAccountApplicationsParams,
 } from '../../src/index.js'
 import { WebhookVerifier } from '../../src/webhooks.js'
@@ -29,9 +31,27 @@ declare const event: VirtualAccountApplicationWebhookEvent
 const eventVersion: number = event.data.public_version
 const applicationSource: string = event.source_id
 const webhookVersion: 'V1.5.1' | 'V1.5.2' | 'V1.6.0' = event.version
+const accountId: string = event.data.account_id
+const directId: string = event.data.direct_id
+
+type RequiredKeys<T> = {
+  [K in keyof T]-?: undefined extends T[K] ? never : K
+}[keyof T]
+type HasRequiredWebhookRoutingFields =
+  'account_id' | 'direct_id' extends RequiredKeys<VirtualAccountApplicationWebhookData> ? true : never
+type GatewayRoutingFieldLeak = Extract<keyof VirtualAccountApplication, 'account_id' | 'direct_id'>
+const requiredWebhookRoutingFields: HasRequiredWebhookRoutingFields = true
+const noGatewayRoutingFieldLeak: GatewayRoutingFieldLeak extends never ? true : never = true
 
 declare const verifier: WebhookVerifier
 const parsed = verifier.constructEvent<VirtualAccountApplicationWebhookEvent>('', {})
 const parsedVersion: number = parsed.data.public_version
 
-void [create, list, version, closeReason, eventVersion, applicationSource, webhookVersion, parsedVersion]
+declare const legacyEvent: LegacyVirtualAccountApplicationWebhookEvent
+const legacyApplicationId: string = legacyEvent.data.application_id
+
+void [
+  create, list, version, closeReason, eventVersion, applicationSource, webhookVersion,
+  accountId, directId, requiredWebhookRoutingFields, noGatewayRoutingFieldLeak,
+  parsedVersion, legacyApplicationId,
+]

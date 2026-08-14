@@ -16,12 +16,48 @@ export interface UQPayWebhookEvent<TData = unknown> {
 
 export type VirtualAccountApplicationWebhookVersion = 'V1.5.1' | 'V1.5.2' | 'V1.6.0'
 
-export type VirtualAccountApplicationWebhookEvent = UQPayWebhookEvent<VirtualAccountApplication> & {
+/**
+ * Webhook-only application data. The routing fields are intentionally absent
+ * from Gateway Create, List, and Retrieve application DTOs.
+ */
+export interface VirtualAccountApplicationWebhookData extends VirtualAccountApplication {
+  account_id: string
+  direct_id: string
+}
+
+type VirtualAccountApplicationWebhookEnvelope<
+  TEventType extends 'virtual.account.create' | 'virtual.account.update' | 'virtual.account.closed',
+  TData,
+> = UQPayWebhookEvent<TData> & {
   version: VirtualAccountApplicationWebhookVersion
   event_name: 'VIRTUAL'
-  event_type: 'virtual.account.create' | 'virtual.account.update' | 'virtual.account.closed'
+  event_type: TEventType
   source_id: string
 }
+
+export type VirtualAccountApplicationCreatedWebhookEvent =
+  VirtualAccountApplicationWebhookEnvelope<'virtual.account.create', VirtualAccountApplicationWebhookData>
+
+export type VirtualAccountApplicationUpdatedWebhookEvent =
+  VirtualAccountApplicationWebhookEnvelope<'virtual.account.update', VirtualAccountApplicationWebhookData>
+
+export type VirtualAccountApplicationClosedWebhookEvent =
+  VirtualAccountApplicationWebhookEnvelope<'virtual.account.closed', VirtualAccountApplicationWebhookData>
+
+export type VirtualAccountApplicationWebhookEvent =
+  | VirtualAccountApplicationCreatedWebhookEvent
+  | VirtualAccountApplicationUpdatedWebhookEvent
+  | VirtualAccountApplicationClosedWebhookEvent
+
+/**
+ * Compatibility type for archived deliveries produced before account_id and
+ * direct_id were restored to the Hub payload. New deliveries should use
+ * VirtualAccountApplicationWebhookEvent.
+ */
+export type LegacyVirtualAccountApplicationWebhookEvent =
+  | VirtualAccountApplicationWebhookEnvelope<'virtual.account.create', VirtualAccountApplication>
+  | VirtualAccountApplicationWebhookEnvelope<'virtual.account.update', VirtualAccountApplication>
+  | VirtualAccountApplicationWebhookEnvelope<'virtual.account.closed', VirtualAccountApplication>
 
 // ─── Verifier options ─────────────────────────────────────────────────────────
 

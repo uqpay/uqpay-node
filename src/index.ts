@@ -23,7 +23,12 @@ export type { KycMissingField } from './error.js'
 export type {
   UQPayWebhookEvent,
   VirtualAccountApplicationWebhookVersion,
+  VirtualAccountApplicationWebhookData,
+  VirtualAccountApplicationCreatedWebhookEvent,
+  VirtualAccountApplicationUpdatedWebhookEvent,
+  VirtualAccountApplicationClosedWebhookEvent,
   VirtualAccountApplicationWebhookEvent,
+  LegacyVirtualAccountApplicationWebhookEvent,
   WebhookOptions,
 } from './webhooks.js'
 

@@ -33,6 +33,15 @@ Virtual Account integrations must migrate before adopting this version.
 - HTTP 400 application concealment errors with `type=not_found` map to
   `NotFoundError` without changing their type, code, message, or HTTP status.
 
+### Fixed
+
+- Restored the required webhook-only `account_id` and `direct_id` fields on
+  Virtual Account application events for `virtual.account.create`,
+  `virtual.account.update`, and `virtual.account.closed` across Hub versions
+  `V1.5.1`, `V1.5.2`, and `V1.6.0`. Gateway Create, List, and Retrieve DTOs remain
+  unchanged. Archived pre-restoration payloads can be typed explicitly with
+  `LegacyVirtualAccountApplicationWebhookEvent`.
+
 ### Breaking
 
 - Existing Create Virtual Account callers must add `country`, replace a currency
