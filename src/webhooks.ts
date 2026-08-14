@@ -21,7 +21,13 @@ export type VirtualAccountApplicationWebhookVersion = 'V1.5.1' | 'V1.5.2' | 'V1.
  * from Gateway Create, List, and Retrieve application DTOs.
  */
 export interface VirtualAccountApplicationWebhookData extends VirtualAccountApplication {
+  /** UUID of the account that owns the Virtual Account application. */
   account_id: string
+  /**
+   * Routing context from Webhook Hub. The value is "0" for a main account and
+   * the owning main account ID for a connected account. This is an ordinary
+   * string and must not be parsed or validated as a UUID.
+   */
   direct_id: string
 }
 

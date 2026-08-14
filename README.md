@@ -374,9 +374,12 @@ const event = client.webhooks.constructEvent<VirtualAccountApplicationWebhookEve
   headers,
 )
 
-console.log(event.data.account_id) // account on which the application event occurred
-console.log(event.data.direct_id)  // owning/direct account routing context
+console.log(event.data.account_id) // UUID of the account that owns the application
+console.log(event.data.direct_id)  // "0" for main; main account ID for connected account
 ```
+
+Treat `direct_id` as an ordinary string. It is not a UUID field and must not be
+parsed or validated as one.
 
 New deliveries should use `VirtualAccountApplicationWebhookEvent`, where both
 routing fields are required. To read archived payloads captured before the Hub
