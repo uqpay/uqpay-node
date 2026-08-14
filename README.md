@@ -123,6 +123,7 @@ const accepted = await client.banking.virtualAccounts.create(
   { headers: { 'x-idempotency-key': 'va-application-001' } }
 )
 console.log(accepted.data.application_id, accepted.data.public_version)
+console.log(accepted.data.account_id, accepted.data.direct_id)
 
 // Applications are separate from issued Virtual Account bank details.
 const applications = await client.banking.virtualAccountApplications.list({
@@ -360,10 +361,8 @@ Virtual Account application events use `virtual.account.create`,
 `data.application_id`. Deduplicate deliveries by `event_id`, then apply an event
 only when its `data.public_version` is greater than the version already stored.
 Webhook `data` restores the required routing fields `account_id` and `direct_id`
-alongside the application fields. This release types them only on webhook data.
-Sandbox REST payloads may currently include them, but the Developer Docs REST
-contract is still pending; Create, List, and Retrieve public types therefore do
-not expose them yet.
+alongside the application fields. They are also required on successful Gateway
+Create and Retrieve application data, and on every List application summary.
 `close_reason` is always present and may be empty even when the bank detail is
 `CLOSED`. The verifier is version-agnostic and preserves the Hub's application
 DTO for supported subscription versions `V1.5.1`, `V1.5.2`, and `V1.6.0`.
@@ -380,8 +379,10 @@ console.log(event.data.account_id) // UUID of the account that owns the applicat
 console.log(event.data.direct_id)  // "0" for main; main account ID for connected account
 ```
 
-Treat `direct_id` as an ordinary string. It is not a UUID field and must not be
-parsed or validated as one.
+Across REST and webhook data, `account_id` is the UUID of the account that owns
+the application. Treat `direct_id` as an ordinary string: it is `"0"` for a main
+account and the main account ID for a connected account, and must not be parsed
+or validated as a UUID.
 
 New deliveries should use `VirtualAccountApplicationWebhookEvent`, where both
 routing fields are required. To read archived payloads captured before the Hub

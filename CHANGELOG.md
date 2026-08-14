@@ -35,13 +35,13 @@ Virtual Account integrations must migrate before adopting this version.
 
 ### Fixed
 
-- Restored the required webhook-only `account_id` and `direct_id` fields on
-  Virtual Account application events for `virtual.account.create`,
+- Restored the required `account_id` and `direct_id` fields on successful
+  Virtual Account Create/Retrieve data, List summaries, and application events for `virtual.account.create`,
   `virtual.account.update`, and `virtual.account.closed` across Hub versions
-  `V1.5.1`, `V1.5.2`, and `V1.6.0`. REST public types remain unchanged pending a
-  published Developer Docs contract, even though current Sandbox payloads may
-  already contain these fields. Archived pre-restoration payloads can be typed
-  explicitly with `LegacyVirtualAccountApplicationWebhookEvent`.
+  `V1.5.1`, `V1.5.2`, and `V1.6.0`. `account_id` is the owning account UUID;
+  `direct_id` is an ordinary string (`"0"` for main accounts). Archived
+  pre-restoration webhook payloads can be typed explicitly with
+  `LegacyVirtualAccountApplicationWebhookEvent`.
 
 ### Breaking
 

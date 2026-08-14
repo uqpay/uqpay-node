@@ -24,6 +24,7 @@ export type {
   UQPayWebhookEvent,
   VirtualAccountApplicationWebhookVersion,
   VirtualAccountApplicationWebhookData,
+  LegacyVirtualAccountApplicationWebhookData,
   VirtualAccountApplicationCreatedWebhookEvent,
   VirtualAccountApplicationUpdatedWebhookEvent,
   VirtualAccountApplicationClosedWebhookEvent,

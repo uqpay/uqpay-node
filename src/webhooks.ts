@@ -16,20 +16,14 @@ export interface UQPayWebhookEvent<TData = unknown> {
 
 export type VirtualAccountApplicationWebhookVersion = 'V1.5.1' | 'V1.5.2' | 'V1.6.0'
 
-/**
- * Application webhook data with restored routing fields. The SDK exposes these
- * fields here while their REST public contract remains pending.
- */
-export interface VirtualAccountApplicationWebhookData extends VirtualAccountApplication {
-  /** UUID of the account that owns the Virtual Account application. */
-  account_id: string
-  /**
-   * Routing context from Webhook Hub. The value is "0" for a main account and
-   * the owning main account ID for a connected account. This is an ordinary
-   * string and must not be parsed or validated as a UUID.
-   */
-  direct_id: string
-}
+/** Complete application data shared by REST detail responses and webhooks. */
+export type VirtualAccountApplicationWebhookData = VirtualAccountApplication
+
+/** Archived application data from before the routing fields were restored. */
+export type LegacyVirtualAccountApplicationWebhookData = Omit<
+  VirtualAccountApplication,
+  'account_id' | 'direct_id'
+>
 
 type VirtualAccountApplicationWebhookEnvelope<
   TEventType extends 'virtual.account.create' | 'virtual.account.update' | 'virtual.account.closed',
@@ -61,9 +55,9 @@ export type VirtualAccountApplicationWebhookEvent =
  * VirtualAccountApplicationWebhookEvent.
  */
 export type LegacyVirtualAccountApplicationWebhookEvent =
-  | VirtualAccountApplicationWebhookEnvelope<'virtual.account.create', VirtualAccountApplication>
-  | VirtualAccountApplicationWebhookEnvelope<'virtual.account.update', VirtualAccountApplication>
-  | VirtualAccountApplicationWebhookEnvelope<'virtual.account.closed', VirtualAccountApplication>
+  | VirtualAccountApplicationWebhookEnvelope<'virtual.account.create', LegacyVirtualAccountApplicationWebhookData>
+  | VirtualAccountApplicationWebhookEnvelope<'virtual.account.update', LegacyVirtualAccountApplicationWebhookData>
+  | VirtualAccountApplicationWebhookEnvelope<'virtual.account.closed', LegacyVirtualAccountApplicationWebhookData>
 
 // ─── Verifier options ─────────────────────────────────────────────────────────
 
