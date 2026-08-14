@@ -1,4 +1,4 @@
-import { normaliseApiError, NetworkError, UQPayError } from './error.js'
+import { normaliseApiError, NetworkError, ReconcileRequiredError, UQPayError } from './error.js'
 import { generateIdempotencyKey, validateIdempotencyKey, validateOpaqueIdempotencyKey } from './idempotency.js'
 import { shouldRetry, computeDelay, parseRetryAfterMs } from './retry.js'
 import type { TokenManager } from './auth.js'
@@ -22,6 +22,10 @@ function isTokenExpiredMessage(message: string): boolean {
 
 function isIpNotAllowedMessage(message: string): boolean {
   return message.toLowerCase().includes(IP_NOT_ALLOWED_PATTERN)
+}
+
+function isMutatingMethod(method: InternalRequestOptions['method']): boolean {
+  return method !== 'GET'
 }
 
 export interface InternalRequestOptions {
@@ -59,19 +63,25 @@ export class HttpClient {
 
   async request<T = unknown>(
     opts: InternalRequestOptions,
-    reqOptions: RequestOptions = {},
-    retryCount = 0,
-    tokenRefreshed = false
+    reqOptions: RequestOptions = {}
   ): Promise<T> {
-    const timestamp = new Date().toISOString()
-
-    // Build idempotency key — sent on all requests
     const override = reqOptions.headers?.['x-idempotency-key']
     if (override) {
       if (opts.opaqueIdempotencyKey) validateOpaqueIdempotencyKey(override)
       else validateIdempotencyKey(override)
     }
     const idempotencyKey = override ?? generateIdempotencyKey()
+    return this.requestAttempt<T>(opts, reqOptions, idempotencyKey)
+  }
+
+  private async requestAttempt<T>(
+    opts: InternalRequestOptions,
+    reqOptions: RequestOptions,
+    idempotencyKey: string,
+    retryCount = 0,
+    tokenRefreshed = false
+  ): Promise<T> {
+    const timestamp = new Date().toISOString()
 
     const onBehalfOf = reqOptions.headers?.['x-on-behalf-of']
 
@@ -181,10 +191,14 @@ export class HttpClient {
         const msg = err.message.toLowerCase()
         if (isTokenExpiredMessage(msg)) {
           this.tokenManager.invalidate()
-          return this.request<T>(opts, reqOptions, retryCount, true)
+          return this.requestAttempt<T>(opts, reqOptions, idempotencyKey, retryCount, true)
         }
         // All other 401s (IP not allowed, revoked key, unknown) — throw immediately, don't retry
         throw err
+      }
+
+      if (rawStatus >= 500 && !opts.isAuthEndpoint && isMutatingMethod(opts.method)) {
+        throw new ReconcileRequiredError('server_error', ctx, rawStatus)
       }
 
       // Auto-retry for transient errors
@@ -193,19 +207,38 @@ export class HttpClient {
         const retryAfterMs = parseRetryAfterMs(res.headers.get('retry-after'))
         const delay = computeDelay(retryCount, retryAfterMs)
         await new Promise(resolve => setTimeout(resolve, delay))
-        return this.request<T>(opts, reqOptions, retryCount + 1, tokenRefreshed)
+        return this.requestAttempt<T>(opts, reqOptions, idempotencyKey, retryCount + 1, tokenRefreshed)
       }
 
       throw err
     } catch (e) {
-      if (e instanceof UQPayError) {
+      if (e instanceof UQPayError || e instanceof ReconcileRequiredError) {
         throw e
       }
       if (e instanceof Error && e.name === 'AbortError') {
-        throw new NetworkError(`Request timed out after ${timeout}ms`, ctx, diag)
+        if (!opts.isAuthEndpoint && isMutatingMethod(opts.method)) {
+          throw new ReconcileRequiredError('timeout', ctx)
+        }
+        const networkError = new NetworkError(`Request timed out after ${timeout}ms`, ctx, diag)
+        const maxRetries = reqOptions.maxRetries ?? this.defaultMaxRetries
+        if (!opts.isAuthEndpoint && shouldRetry(networkError, retryCount, maxRetries)) {
+          await new Promise(resolve => setTimeout(resolve, computeDelay(retryCount)))
+          return this.requestAttempt<T>(opts, reqOptions, idempotencyKey, retryCount + 1, tokenRefreshed)
+        }
+        throw networkError
       }
       if (e instanceof Error) {
-        throw new NetworkError(e.message, ctx, diag)
+        if (!opts.isAuthEndpoint && isMutatingMethod(opts.method)) {
+          const reason = res === undefined ? 'network_error' : 'response_read_error'
+          throw new ReconcileRequiredError(reason, ctx, res?.status)
+        }
+        const networkError = new NetworkError(e.message, ctx, diag)
+        const maxRetries = reqOptions.maxRetries ?? this.defaultMaxRetries
+        if (!opts.isAuthEndpoint && shouldRetry(networkError, retryCount, maxRetries)) {
+          await new Promise(resolve => setTimeout(resolve, computeDelay(retryCount)))
+          return this.requestAttempt<T>(opts, reqOptions, idempotencyKey, retryCount + 1, tokenRefreshed)
+        }
+        throw networkError
       }
       throw e
     } finally {

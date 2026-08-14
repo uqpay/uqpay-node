@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Reuse one `x-idempotency-key` across 401 token refresh and HTTP 429 retries
+  belonging to the same logical request.
+- Stop automatically replaying mutating requests after connection, timeout,
+  response-read, or HTTP 5xx failures with an uncertain remote outcome. These
+  failures now throw `ReconcileRequiredError` with the method, path, original
+  idempotency key, reason, and HTTP status when available.
+
 ## [2.0.0]
 
 This major release replaces the previous Virtual Account Create and webhook

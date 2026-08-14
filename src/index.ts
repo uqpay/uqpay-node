@@ -13,11 +13,12 @@ export {
   IdempotencyError,
   ServerError,
   NetworkError,
+  ReconcileRequiredError,
   UQPayWebhookError,
   SimulatorNotAvailableError,
   InvalidIdempotencyKeyError,
 } from './error.js'
-export type { KycMissingField } from './error.js'
+export type { KycMissingField, ReconcileReason } from './error.js'
 
 // ─── Webhook types ────────────────────────────────────────────────────────────
 export type {
