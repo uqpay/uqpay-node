@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1]
+
 ### Fixed
 
 - Reuse one `x-idempotency-key` across 401 token refresh and HTTP 429 retries
