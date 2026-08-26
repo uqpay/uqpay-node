@@ -20,7 +20,8 @@ export interface Representative {
   nationality: string
   tax_number?: string
   phone_number: string
-  date_of_birth: string
+  /** Representative's date of birth in YYYY-MM-DD format when provided. */
+  date_of_birth?: string
   country_or_territory: string
   street_address: string
   city: string
