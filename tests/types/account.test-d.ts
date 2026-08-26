@@ -6,7 +6,11 @@
 //   - 2026-03-19: employment_status, industry, job_title, company_name
 //   - 2026-07-02: gender, annual_income
 // Missing any of these makes Create SubAccount reject INDIVIDUAL requests.
-import type { IndividualInfo, CreateSubAccountParams } from '../../src/resources/account/types.js'
+import type {
+  IndividualInfo,
+  Representative,
+  CreateSubAccountParams,
+} from '../../src/resources/account/types.js'
 
 // Keys of T that are present AND non-optional.
 type RequiredKeys<T> = {
@@ -18,6 +22,7 @@ type RequiredKeys<T> = {
 type IsRequired<K extends string> = K extends RequiredKeys<IndividualInfo> ? true : never
 
 const _firstNameEnglish: IsRequired<'first_name_english'> = true
+const _dateOfBirth: IsRequired<'date_of_birth'> = true
 const _state: IsRequired<'state'> = true // spec lists state under required
 const _employmentStatus: IsRequired<'employment_status'> = true
 const _industry: IsRequired<'industry'> = true
@@ -52,7 +57,7 @@ const complete: IndividualInfo = {
 }
 
 void [
-  _firstNameEnglish, _state, _employmentStatus, _industry, _jobTitle,
+  _firstNameEnglish, _dateOfBirth, _state, _employmentStatus, _industry, _jobTitle,
   _companyName, _gender, _annualIncome, _genderMale, _genderFemale, complete,
 ]
 
@@ -87,3 +92,10 @@ const fullParams: CreateSubAccountParams = {
 }
 
 void fullParams
+
+// COMPANY representative DOB is optional, but remains a YYYY-MM-DD string when supplied.
+type IsOptional<T, K extends keyof T> = {} extends Pick<T, K> ? true : never
+const _representativeDobOptional: IsOptional<Representative, 'date_of_birth'> = true
+const _representativeDob: Representative['date_of_birth'] = '1985-03-20'
+
+void [_representativeDobOptional, _representativeDob]
