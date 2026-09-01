@@ -7,6 +7,8 @@
 //   - 2026-07-02: gender, annual_income
 // Missing any of these makes Create SubAccount reject INDIVIDUAL requests.
 import type {
+  BusinessDetails,
+  CompanyAccountPurpose,
   IndividualInfo,
   Representative,
   CreateSubAccountParams,
@@ -20,6 +22,7 @@ type RequiredKeys<T> = {
 // `true` only if K is a required key of IndividualInfo; otherwise `never`,
 // which makes the `const ... : Assert<...> = true` line a compile error.
 type IsRequired<K extends string> = K extends RequiredKeys<IndividualInfo> ? true : never
+type IsRequiredIn<T, K extends keyof T> = K extends RequiredKeys<T> ? true : never
 
 const _firstNameEnglish: IsRequired<'first_name_english'> = true
 const _dateOfBirth: IsRequired<'date_of_birth'> = true
@@ -93,9 +96,46 @@ const fullParams: CreateSubAccountParams = {
 
 void fullParams
 
-// COMPANY representative DOB is optional, but remains a YYYY-MM-DD string when supplied.
-type IsOptional<T, K extends keyof T> = {} extends Pick<T, K> ? true : never
-const _representativeDobOptional: IsOptional<Representative, 'date_of_birth'> = true
+// COMPANY representative DOB is required and remains a YYYY-MM-DD string.
+const _representativeDobRequired: IsRequiredIn<Representative, 'date_of_birth'> = true
 const _representativeDob: Representative['date_of_birth'] = '1985-03-20'
 
-void [_representativeDobOptional, _representativeDob]
+void [_representativeDobRequired, _representativeDob]
+
+// COMPANY requests with inherit=-1 must expose the full required contract.
+const _representativeEmailRequired: IsRequiredIn<Representative, 'email_address'> = true
+const _representativeOwnershipRequired: IsRequiredIn<Representative, 'ownership_percentage'> = true
+const _representativeOwnershipIsString: Representative['ownership_percentage'] = '0'
+const _accountPurposeRequired: IsRequiredIn<BusinessDetails, 'account_purpose'> = true
+const _bankingCurrenciesRequired: IsRequiredIn<BusinessDetails, 'banking_currencies'> = true
+const _bankingCountriesRequired: IsRequiredIn<BusinessDetails, 'banking_countries'> = true
+const _articlesRequired: IsRequiredIn<BusinessDetails, 'articles_of_association'> = true
+
+const companyBusinessDetails: BusinessDetails = {
+  country_or_territory: 'SG',
+  street_address: '1 Raffles Place',
+  city: 'Singapore',
+  postal_code: '048616',
+  industry: '62010',
+  account_purpose: ['PAYMENT_COLLECTION', 'TREASURY_FX'],
+  banking_currencies: ['SGD'],
+  banking_countries: ['SG'],
+  articles_of_association: ['file-id'],
+}
+
+const _supportedPurpose: CompanyAccountPurpose = 'GLOBAL_TRANSFER'
+// @ts-expect-error INVESTMENT is rejected by the v3 COMPANY contract.
+const _removedPurpose: CompanyAccountPurpose = 'INVESTMENT'
+
+void [
+  _representativeEmailRequired,
+  _representativeOwnershipRequired,
+  _representativeOwnershipIsString,
+  _accountPurposeRequired,
+  _bankingCurrenciesRequired,
+  _bankingCountriesRequired,
+  _articlesRequired,
+  companyBusinessDetails,
+  _supportedPurpose,
+  _removedPurpose,
+]

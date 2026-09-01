@@ -16,12 +16,13 @@ export interface Representative {
   email_address: string
   is_applicant: '0' | '1'
   job_title: string
-  ownership_percentage?: number
+  /** Ownership share as a decimal string. Send "0" when the representative has no ownership. */
+  ownership_percentage: string
   nationality: string
   tax_number?: string
   phone_number: string
-  /** Representative's date of birth in YYYY-MM-DD format when provided. */
-  date_of_birth?: string
+  /** Representative's date of birth in YYYY-MM-DD format. */
+  date_of_birth: string
   country_or_territory: string
   street_address: string
   city: string
@@ -107,6 +108,16 @@ export interface IdentityVerification {
   face_docs?: string[]
 }
 
+export type CompanyAccountPurpose =
+  | 'PAYMENT_COLLECTION'
+  | 'PAYOUT_DISBURSEMENT'
+  | 'MULTI_CURRENCY_BANKING'
+  | 'CARD_ISSUING'
+  | 'CRYPTO_RAMP'
+  | 'GLOBAL_TRANSFER'
+  | 'TREASURY_FX'
+  | 'OTHERS'
+
 export interface BusinessDetails {
   country_or_territory: string
   street_address: string
@@ -118,9 +129,11 @@ export interface BusinessDetails {
   number_of_employee?: string
   website_url?: string
   company_description?: string
-  account_purpose?: string[]
-  banking_currencies?: string[]
-  banking_countries?: string[]
+  account_purpose: CompanyAccountPurpose[]
+  banking_currencies: string[]
+  banking_countries: string[]
+  /** Base64-encoded documents or UQPAY file IDs. */
+  articles_of_association: string[]
 }
 
 export interface CreateSubAccountParams {
