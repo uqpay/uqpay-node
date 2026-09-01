@@ -123,6 +123,85 @@ const companyBusinessDetails: BusinessDetails = {
   articles_of_association: ['file-id'],
 }
 
+const companyRepresentative: Representative = {
+  legal_first_name_english: 'Jane',
+  legal_last_name_english: 'Doe',
+  email_address: 'jane.doe@example.com',
+  is_applicant: '1',
+  job_title: 'Director',
+  ownership_percentage: '0',
+  nationality: 'SG',
+  phone_number: '+6591234567',
+  date_of_birth: '1985-03-20',
+  country_or_territory: 'SG',
+  street_address: '1 Raffles Place',
+  city: 'Singapore',
+  postal_code: '048616',
+  identification_type: 'PASSPORT',
+  identification_value: 'E12345678',
+  identity_docs: ['file-id'],
+}
+
+const completeCompanyParams: CreateSubAccountParams = {
+  business_type: 'BANKING',
+  entity_type: 'COMPANY',
+  inherit: -1,
+  ownership_details: {
+    representatives: [companyRepresentative],
+  },
+  business_details: companyBusinessDetails,
+}
+
+// @ts-expect-error COMPANY inherit=-1 requires ownership_details.
+const companyMissingOwnershipDetails: CreateSubAccountParams = {
+  business_type: 'BANKING',
+  entity_type: 'COMPANY',
+  inherit: -1,
+  business_details: companyBusinessDetails,
+}
+
+// @ts-expect-error COMPANY inherit=-1 requires ownership_details.representatives.
+const companyMissingRepresentatives: CreateSubAccountParams = {
+  business_type: 'BANKING',
+  entity_type: 'COMPANY',
+  inherit: -1,
+  ownership_details: {},
+  business_details: companyBusinessDetails,
+}
+
+// @ts-expect-error COMPANY inherit=-1 requires business_details.
+const companyMissingBusinessDetails: CreateSubAccountParams = {
+  business_type: 'BANKING',
+  entity_type: 'COMPANY',
+  inherit: -1,
+  ownership_details: {
+    representatives: [companyRepresentative],
+  },
+}
+
+// COMPANY inherit=1 is exempt from the non-inherited onboarding fields.
+const inheritedCompanyParams: CreateSubAccountParams = {
+  business_type: 'BANKING',
+  entity_type: 'COMPANY',
+  inherit: 1,
+}
+
+// Omitting COMPANY inherit follows the non-inherited contract.
+const companyOmittedInheritParams: CreateSubAccountParams = {
+  business_type: 'BANKING',
+  entity_type: 'COMPANY',
+  ownership_details: {
+    representatives: [companyRepresentative],
+  },
+  business_details: companyBusinessDetails,
+}
+
+// @ts-expect-error COMPANY with omitted inherit still requires the non-inherited details.
+const companyOmittedInheritMissingDetails: CreateSubAccountParams = {
+  business_type: 'BANKING',
+  entity_type: 'COMPANY',
+}
+
 const _supportedPurpose: CompanyAccountPurpose = 'GLOBAL_TRANSFER'
 // @ts-expect-error INVESTMENT is rejected by the v3 COMPANY contract.
 const _removedPurpose: CompanyAccountPurpose = 'INVESTMENT'
@@ -136,6 +215,14 @@ void [
   _bankingCountriesRequired,
   _articlesRequired,
   companyBusinessDetails,
+  companyRepresentative,
+  completeCompanyParams,
+  companyMissingOwnershipDetails,
+  companyMissingRepresentatives,
+  companyMissingBusinessDetails,
+  inheritedCompanyParams,
+  companyOmittedInheritParams,
+  companyOmittedInheritMissingDetails,
   _supportedPurpose,
   _removedPurpose,
 ]

@@ -136,12 +136,9 @@ export interface BusinessDetails {
   articles_of_association: string[]
 }
 
-export interface CreateSubAccountParams {
+interface CreateSubAccountBase {
   business_type: BusinessType
-  entity_type: EntityType
   nickname?: string
-  /** 1 = inherit from master account, -1 = do not inherit. Required for COMPANY entity_type. */
-  inherit?: 1 | -1
   company_info?: CompanyInfo
   company_address?: Address
   individual_info?: IndividualInfo
@@ -178,6 +175,44 @@ export interface CreateSubAccountParams {
   }
   tos_acceptance?: TosAcceptance
 }
+
+interface CreateIndividualSubAccountParams extends CreateSubAccountBase {
+  entity_type: 'INDIVIDUAL'
+  /** 1 = inherit from master account, -1 = do not inherit. */
+  inherit?: 1 | -1
+}
+
+interface CreateInheritedCompanySubAccountParams extends CreateSubAccountBase {
+  entity_type: 'COMPANY'
+  /** Inherit onboarding details from the master account. */
+  inherit: 1
+}
+
+interface CreateNonInheritedCompanySubAccountParams
+  extends Omit<CreateSubAccountBase, 'ownership_details' | 'business_details'> {
+  entity_type: 'COMPANY'
+  /** Do not inherit onboarding details from the master account. Omission is equivalent to -1. */
+  inherit?: -1
+  ownership_details: {
+    representatives: Representative[]
+    shareholder_docs?: string[]
+  }
+  business_details: BusinessDetails
+}
+
+/**
+ * Create SubAccount request.
+ *
+ * COMPANY requests can choose whether to inherit onboarding details. When
+ * `inherit` is `-1` or omitted, `ownership_details.representatives` and
+ * `business_details` are required. COMPANY requests with `inherit: 1` inherit
+ * those details from the master account. INDIVIDUAL requests retain their
+ * existing field requirements.
+ */
+export type CreateSubAccountParams =
+  | CreateIndividualSubAccountParams
+  | CreateInheritedCompanySubAccountParams
+  | CreateNonInheritedCompanySubAccountParams
 
 // ─── Create Sub-Account Response ─────────────────────────────────────────────
 

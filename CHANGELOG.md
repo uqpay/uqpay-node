@@ -14,6 +14,10 @@ with the contract that takes effect in Production on 2026-09-17.
 
 ### Breaking
 
+- `CreateSubAccountParams` now models COMPANY inheritance as a discriminated
+  union. When `inherit` is `-1` or omitted, TypeScript requires
+  `ownership_details.representatives` and `business_details`; `inherit=1`
+  remains exempt.
 - For `entity_type=COMPANY` with `inherit=-1`, representatives now require
   `email_address`, `date_of_birth`, and string-valued `ownership_percentage`;
   send `"0"` when a representative has no ownership.
