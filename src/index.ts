@@ -45,6 +45,7 @@ export type {
   IndividualGender,
   IndividualEmploymentStatus,
   IdentityVerification,
+  CompanyAccountPurpose,
   BusinessDetails,
   // Params
   CreateSubAccountParams,

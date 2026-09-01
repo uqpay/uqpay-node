@@ -16,12 +16,13 @@ export interface Representative {
   email_address: string
   is_applicant: '0' | '1'
   job_title: string
-  ownership_percentage?: number
+  /** Ownership share as a decimal string. Send "0" when the representative has no ownership. */
+  ownership_percentage: string
   nationality: string
   tax_number?: string
   phone_number: string
-  /** Representative's date of birth in YYYY-MM-DD format when provided. */
-  date_of_birth?: string
+  /** Representative's date of birth in YYYY-MM-DD format. */
+  date_of_birth: string
   country_or_territory: string
   street_address: string
   city: string
@@ -107,6 +108,16 @@ export interface IdentityVerification {
   face_docs?: string[]
 }
 
+export type CompanyAccountPurpose =
+  | 'PAYMENT_COLLECTION'
+  | 'PAYOUT_DISBURSEMENT'
+  | 'MULTI_CURRENCY_BANKING'
+  | 'CARD_ISSUING'
+  | 'CRYPTO_RAMP'
+  | 'GLOBAL_TRANSFER'
+  | 'TREASURY_FX'
+  | 'OTHERS'
+
 export interface BusinessDetails {
   country_or_territory: string
   street_address: string
@@ -118,17 +129,16 @@ export interface BusinessDetails {
   number_of_employee?: string
   website_url?: string
   company_description?: string
-  account_purpose?: string[]
-  banking_currencies?: string[]
-  banking_countries?: string[]
+  account_purpose: CompanyAccountPurpose[]
+  banking_currencies: string[]
+  banking_countries: string[]
+  /** Base64-encoded documents or UQPAY file IDs. */
+  articles_of_association: string[]
 }
 
-export interface CreateSubAccountParams {
+interface CreateSubAccountBase {
   business_type: BusinessType
-  entity_type: EntityType
   nickname?: string
-  /** 1 = inherit from master account, -1 = do not inherit. Required for COMPANY entity_type. */
-  inherit?: 1 | -1
   company_info?: CompanyInfo
   company_address?: Address
   individual_info?: IndividualInfo
@@ -165,6 +175,44 @@ export interface CreateSubAccountParams {
   }
   tos_acceptance?: TosAcceptance
 }
+
+interface CreateIndividualSubAccountParams extends CreateSubAccountBase {
+  entity_type: 'INDIVIDUAL'
+  /** 1 = inherit from master account, -1 = do not inherit. */
+  inherit?: 1 | -1
+}
+
+interface CreateInheritedCompanySubAccountParams extends CreateSubAccountBase {
+  entity_type: 'COMPANY'
+  /** Inherit onboarding details from the master account. */
+  inherit: 1
+}
+
+interface CreateNonInheritedCompanySubAccountParams
+  extends Omit<CreateSubAccountBase, 'ownership_details' | 'business_details'> {
+  entity_type: 'COMPANY'
+  /** Do not inherit onboarding details from the master account. Omission is equivalent to -1. */
+  inherit?: -1
+  ownership_details: {
+    representatives: Representative[]
+    shareholder_docs?: string[]
+  }
+  business_details: BusinessDetails
+}
+
+/**
+ * Create SubAccount request.
+ *
+ * COMPANY requests can choose whether to inherit onboarding details. When
+ * `inherit` is `-1` or omitted, `ownership_details.representatives` and
+ * `business_details` are required. COMPANY requests with `inherit: 1` inherit
+ * those details from the master account. INDIVIDUAL requests retain their
+ * existing field requirements.
+ */
+export type CreateSubAccountParams =
+  | CreateIndividualSubAccountParams
+  | CreateInheritedCompanySubAccountParams
+  | CreateNonInheritedCompanySubAccountParams
 
 // ─── Create Sub-Account Response ─────────────────────────────────────────────
 
