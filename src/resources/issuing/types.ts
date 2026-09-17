@@ -59,6 +59,11 @@ export interface KycVerification {
 }
 
 export interface CardholderRequiredFields {
+  email?: string
+  first_name?: string
+  last_name?: string
+  country_code?: string
+
   gender?: Gender
   nationality?: string
   phone_number?: string
@@ -431,10 +436,10 @@ export interface IssuingBalanceTransaction {
 // ─── Card Transactions ────────────────────────────────────────────────────────
 
 export interface MerchantData {
-  category_code: string
-  city: string
-  country: string
-  name: string
+  category_code?: string
+  city?: string
+  country?: string
+  name?: string
 }
 
 export interface CardTransaction {
@@ -543,6 +548,7 @@ export interface ListProductsParams {
 
 /** Payload for event_type: 'cardholder.kyc.status_changed' */
 export interface CardholderKycStatusChangedPayload {
+  reason?: string
   cardholder_id: string
   email: string
   first_name: string
@@ -561,6 +567,7 @@ export interface CardholderKycStatusChangedPayload {
 
 /** Payload for event_type: 'cardholder.updated' */
 export interface CardholderUpdatedPayload {
+  reason?: string
   cardholder_id: string
   email: string
   first_name: string

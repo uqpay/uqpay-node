@@ -243,6 +243,8 @@ export interface ContactDetails {
 }
 
 export interface RetrieveAccountResponse {
+  person_details?: Record<string, unknown>
+  residential_address?: Record<string, unknown>
   account_id: string
   short_reference_id?: string
   business_code?: BusinessType[]

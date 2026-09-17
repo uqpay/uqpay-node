@@ -1,6 +1,6 @@
 # API contract alignment
 
-Contract reference: [OpenAPI revision 8267056](https://github.com/uqpay/uqpay-docs/tree/8267056f7fefc1183b069e0387e5ebaecbd2ad27/docs).
+Contract reference: [OpenAPI revision 1feb1d2](https://github.com/uqpay/uqpay-docs/tree/1feb1d26d032c53b79ab44a7d48e88c9a91d397d/docs).
 
 ## PIN management
 
@@ -41,3 +41,17 @@ Response types allow null payment metadata, next action, latest attempt and card
 Webhook verification returns the original parsed data, including nulls, unknown values and decimal strings. Signed fixtures cover all 26 payment method types in the reference contract.
 
 `CheckBeneficiaryParams` is now a union requiring an account number or IBAN; consumers extending the old interface should use a type intersection.
+
+## Boundary and response regression coverage
+
+Offline fixtures exercise all three KYC entry points (create cardholder, update cardholder and create card with inline cardholder fields). They cover all six proof providers, reference lengths 9/10/64/65 and birth dates corresponding to ages 17/18/79/80 on 2026-09-17. These tests prove that the SDK preserves the submitted values; server acceptance, current configuration and environment rollout still require Sandbox verification. Inline cardholder fields include email, first/last name and country code.
+
+Card list pagination preserves page sizes 1, 10 and 100. Banking list page sizes are 1–100. Currency conversions require a fresh quote per operation: `FUNDS_ARRIVED` is intermediate and `TRADE_SETTLED` is the successful terminal state.
+
+Payment intent retrieval supports per-request `x-on-behalf-of` without requiring a caller-supplied idempotency key. Existing automatic GET header behavior remains language-specific; the contract no longer requires the header but does not prohibit it. POST idempotency and retry behavior remain unchanged.
+
+Card creation orders use `CREATE_CARD`. Issuing transfer REST status uses uppercase `PENDING`/`FAILED`/`COMPLETED`; transfer webhook status is a distinct lowercase field. Wallet values remain open strings, including empty and unknown values. The SDK does not infer transaction context from them.
+
+Sparse merchant response objects and individual account detail fields are representable. KYC webhook payload types expose `reason`. Response regression fixtures preserve company list summaries, individual details, negative decimal balance strings, payer ID `"0"`, empty identification types and nullable fields.
+
+For payment intent proxy reads, pass `{ headers: { 'x-on-behalf-of': accountId } }` in request options.

@@ -87,10 +87,26 @@ it('accepts nullable and empty response fields without weakening request bodies'
  expect([response.metadata,attempt.advice_code,card.risk_controls,holder.gender,product.mode_type,update.card_art_id]).toEqual([null,'',null,'',undefined,'art-1'])
 })
 it.each(['card','card_present','wechatpay','alipay','alipaycn','alipayhk','paynow','grabpay','applepay','googlepay','unionpay','crypto','tng','truemoney','gcash','dana','kakaopay','tosspay','naverpay','mpay','kplus','boost','rabbitlinepay','kaspi','hipay','shopeepay'])('retains signed %s webhook data including nulls and decimal strings', method => {
- const event = {version:'V1.6.0',event_id:'evt-test',event_name:'ACQUIRING',event_type:'acquiring.payment_intent.succeeded',data:{amount:'12345678901234567890.12345678',complete_time:null,metadata:null,payment_method:{type:method,[method]:{flow:null,os_type:'',static_qrcode:'qr',network:'VISA'}},wallet_type:'FUTURE_WALLET'}}
+ const event = {version:'V1.6.0',event_id:'evt-test',event_name:'ACQUIRING',event_type:'acquiring.payment_intent.succeeded',data:{amount:'12345678901234567890.12345678',complete_time:null,metadata:null,payment_method:{type:method,[method]:{flow:null,os_type:'',static_qrcode:'qr',network:'VISA',issuer_country_code:'SG'}},wallet_type:'FUTURE_WALLET'}}
  const raw = JSON.stringify(event), timestamp = String(Date.now())
  const signature = createHmac('sha512','offline-secret').update(raw+timestamp).digest('hex')
  expect(new WebhookVerifier('offline-secret').constructEvent(raw,{'x-wk-signature':signature,'x-wk-timestamp':timestamp})).toEqual(event)
 })
 // @ts-expect-error At least one account identifier must be present.
 const missingBeneficiaryAccount: CheckBeneficiaryParams = {entity_type:'COMPANY',payment_method:'LOCAL',currency:'EUR'}
+
+import type { CardholderRequiredFields } from '../../src/index.js'
+import type { RetrieveAccountResponse } from '../../src/resources/account/types.js'
+it('types inline cardholder identity and individual account responses', () => {
+ const fields: CardholderRequiredFields = {email:'test@example.test',first_name:'Test',last_name:'User',country_code:'SG'}
+ const account: RetrieveAccountResponse = {account_id:'individual-1',status:'ACTIVE',entity_type:'INDIVIDUAL',person_details:{first_name:'Test'},residential_address:{country:'SG'}}
+ expect(fields.country_code).toBe('SG')
+ expect(account.person_details?.first_name).toBe('Test')
+})
+
+import type { MerchantData, CardholderKycStatusChangedPayload } from '../../src/resources/issuing/types.js'
+it('allows sparse merchant data and exposes the KYC reason', () => {
+ const merchant: MerchantData = {}
+ const event: Pick<CardholderKycStatusChangedPayload,'reason'> = {reason:'more evidence required'}
+ expect(merchant).toEqual({});expect(event.reason).toBe('more evidence required')
+})
