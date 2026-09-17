@@ -195,6 +195,8 @@ export interface ListCardsParams {
 }
 
 export interface CardOrderResponse {
+  failure_code?: string
+  complete_time?: string
   card_id?: string
   card_order_id?: string
   order_type?: string
@@ -238,8 +240,20 @@ export interface NetworkProtectionResponse {
   update_time?: string | null
 }
 
-export interface ResetPinParams { card_id: string; pin: string }
-export interface ResetPinResponse { request_status: 'SUCCESS' }
+/** PIN management. Omitted type means SET; both PIN values use six digits. */
+export type ResetPinParams = { card_id: string; pin: string } & (
+  | { type?: 'SET'; old_pin?: never }
+  | { type: 'RESET'; old_pin?: never }
+  | { type: 'UPDATE'; old_pin: string }
+)
+/** Acceptance is asynchronous; retrieve card_order_id for the final result. */
+export interface ResetPinResponse {
+  request_status: 'SUCCESS'
+  card_id: string
+  card_order_id: string
+  order_status: 'PROCESSING'
+  create_time: string
+}
 
 export type ManageCardPinParams =
   | { card_id: string; type: 'SET'; pin: string; old_pin?: never }
@@ -413,6 +427,8 @@ export interface MerchantData {
 }
 
 export interface CardTransaction {
+  /** Detail only. SETTLED includes partial clearing, not necessarily the full amount. */
+  settlement_status?: 'UNKNOWN' | 'UNSETTLED' | 'SETTLED' | 'NOT_APPLICABLE'
   card_id: string
   card_number: string
   cardholder_id: string

@@ -307,6 +307,8 @@ await client.simulator.issuing.reverse({
 
 // Simulate a deposit
 const deposit = await client.simulator.deposits.simulate({
+  account_id: 'account-id',
+  sender_swift_code: 'WELGBE22',
   currency: 'SGD',
   amount: 500,
 })
@@ -568,3 +570,7 @@ Full API reference: [https://developers.uqpay.com/](https://developers.uqpay.com
 ## License
 
 MIT
+
+## Contract migration notes
+
+See [PIN, RFI, deposit simulation and settlement contracts](CONTRACT_ALIGNMENT.md) for request changes and response interpretation.
