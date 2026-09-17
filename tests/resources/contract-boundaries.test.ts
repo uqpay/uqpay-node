@@ -52,6 +52,17 @@ it('preserves KYC boundaries across all three entry points, paging and proxy hea
  api.mockResolvedValue(response(payout));expect(await banking.payouts.retrieve('payout-1')).toEqual(payout)
  api.mockResolvedValue(response({}))
  const payment = new PaymentResource(http,'client')
+ // AQ-RESPONSE: per-operation missing/empty/populated fixtures.
+ const restCases = [
+  [() => payment.paymentAttempts.retrieve('pa-1'), [{},{complete_time:'',advice_code:'',authentication_data:{cvv_result:''}},{complete_time:'2026-09-17T00:00:00Z',advice_code:'01',authentication_data:{cvv_result:'M'}}]],
+  [() => payment.refunds.retrieve('re-1'), [{},{metadata:null},{metadata:{}},{metadata:{ref:'0001'}}]],
+  [() => payment.payouts.retrieve('po-1'), [{},{completed_time:''},{completed_time:'2026-09-17T00:00:00Z'}]],
+  [() => payment.paymentIntents.retrieve('pi-1'), [{},{metadata:null,next_action:null,latest_payment_attempt:null},{metadata:{ref:'0001'},next_action:{redirect_to_url:{return_url:''}},latest_payment_attempt:{advice_code:''}}]],
+ ] as const
+ for (const [call, fixtures] of restCases) for (const fixture of fixtures) {
+  api.mockResolvedValue(response(fixture));expect(await call()).toEqual(fixture)
+ }
+ api.mockResolvedValue(response({}))
  // D189-D196: every changed GET route, without a caller-supplied idempotency key.
  const routes = [
   ['/v2/payment/balances', (o: import('../../src/types/common.js').RequestOptions) => payment.balances.list({},o)],

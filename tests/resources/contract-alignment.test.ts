@@ -110,3 +110,26 @@ it('allows sparse merchant data and exposes the KYC reason', () => {
  const event: Pick<CardholderKycStatusChangedPayload,'reason'> = {reason:'more evidence required'}
  expect(merchant).toEqual({});expect(event.reason).toBe('more evidence required')
 })
+
+// WH-AQ: per-event raw values survive signature verification; changed bytes fail.
+it('preserves acquiring event null, empty and missing fields after signature verification', () => {
+ const cases = [
+  ['payment_intent.succeeded',['complete_time','cancel_time'],['metadata','next_action','payment_method']],
+  ['payment_attempt.succeeded',['complete_time','cancel_time'],[]],
+  ['refund.succeeded',['complete_time'],['metadata']],
+  ['payout.succeeded',['complete_time'],[]],
+  ['chargeback.alert.created',['appeal_time','response_time'],[]],
+ ] as const
+ for (const [kind,times,objects] of cases) for (const mode of ['missing','null','empty','populated']) {
+  const data: Record<string,unknown> = {}
+  if (mode !== 'missing') {
+   for (const field of times) data[field]=mode==='null'?null:mode==='empty'?'':'2026-09-17T00:00:00Z'
+   for (const field of objects) data[field]=mode==='null'?null:mode==='empty'?{}:{ref:'0001'}
+  }
+  const event={event_type:'acquiring.'+kind,data},raw=JSON.stringify(event),timestamp=String(Date.now())
+  const signature=createHmac('sha512','offline-secret').update(raw+timestamp).digest('hex')
+  const verifier=new WebhookVerifier('offline-secret'), headers={'x-wk-signature':signature,'x-wk-timestamp':timestamp}
+  expect(verifier.constructEvent(raw,headers)).toEqual(event)
+  expect(()=>verifier.constructEvent(raw+' ',headers)).toThrow()
+ }
+})
