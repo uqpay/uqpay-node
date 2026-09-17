@@ -55,3 +55,7 @@ Card creation orders use `CREATE_CARD`. Issuing transfer REST status uses upperc
 Sparse merchant response objects and individual account detail fields are representable. KYC webhook payload types expose `reason`. Response regression fixtures preserve company list summaries, individual details, negative decimal balance strings, payer ID `"0"`, empty identification types and nullable fields.
 
 For payment intent proxy reads, pass `{ headers: { 'x-on-behalf-of': accountId } }` in request options.
+
+## Acquiring GET headers
+
+Offline route-specific checks cover D189–D196: balance list/detail, bank account list/detail, payout list/detail, settlements list and payment intent detail. Each call is exercised with and without `x-on-behalf-of`, while preserving the configured `x-client-id`. Callers need not supply an idempotency key for these GET requests; existing automatic GET headers remain supported. Existing POST idempotency and retry tests remain part of verification.

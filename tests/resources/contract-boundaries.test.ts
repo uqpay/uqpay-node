@@ -43,9 +43,24 @@ it('preserves KYC boundaries across all three entry points, paging and proxy hea
  api.mockResolvedValue(response(payout));expect(await banking.payouts.retrieve('payout-1')).toEqual(payout)
  api.mockResolvedValue(response({}))
  const payment = new PaymentResource(http,'client')
- await payment.paymentIntents.retrieve('pi-1',{headers:{'x-on-behalf-of':'sub-account'}})
- expect(api.mock.lastCall?.[1].headers['x-on-behalf-of']).toBe('sub-account')
- expect(api.mock.lastCall?.[0]).toContain('/v2/payment_intents/pi-1')
+ // D189-D196: every changed GET route, without a caller-supplied idempotency key.
+ const routes = [
+  ['/v2/payment/balances', (o: import('../../src/types/common.js').RequestOptions) => payment.balances.list({},o)],
+  ['/v2/payment/balances/USD', (o: import('../../src/types/common.js').RequestOptions) => payment.balances.retrieve('USD',o)],
+  ['/v2/payment/bankaccount', (o: import('../../src/types/common.js').RequestOptions) => payment.bankAccounts.list({},o)],
+  ['/v2/payment/bankaccount/ba-1', (o: import('../../src/types/common.js').RequestOptions) => payment.bankAccounts.retrieve('ba-1',o)],
+  ['/v2/payment/payout', (o: import('../../src/types/common.js').RequestOptions) => payment.payouts.list({},o)],
+  ['/v2/payment/payout/po-1', (o: import('../../src/types/common.js').RequestOptions) => payment.payouts.retrieve('po-1',o)],
+  ['/v2/payment/settlements', (o: import('../../src/types/common.js').RequestOptions) => payment.settlements.list({},o)],
+  ['/v2/payment_intents/pi-1', (o: import('../../src/types/common.js').RequestOptions) => payment.paymentIntents.retrieve('pi-1',o)],
+ ] as const
+ for (const [path, call] of routes) for (const account of ['sub-account','']) {
+  await call(account ? {headers:{'x-on-behalf-of':account}} : {})
+  expect(new URL(api.mock.lastCall?.[0]).pathname).toBe(path)
+  expect(api.mock.lastCall?.[1].method).toBe('GET')
+  expect(api.mock.lastCall?.[1].headers['x-client-id']).toBe('client')
+  expect(api.mock.lastCall?.[1].headers['x-on-behalf-of'] || '').toBe(account)
+ }
  await payment.paymentIntents.create({amount:'1.00',currency:'USD',merchant_order_id:'merchant-1',description:'Test',return_url:'https://example.test/return'},{headers:{'x-idempotency-key':'550e8400-e29b-41d4-a716-446655440000'}})
  expect(api.mock.lastCall?.[1].headers['x-idempotency-key']).toBe('550e8400-e29b-41d4-a716-446655440000')
 })
