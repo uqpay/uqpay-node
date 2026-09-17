@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { expect, it, vi } from 'vitest'
 import { HttpClient } from '../../src/http.js'
 import { TokenManager } from '../../src/auth.js'
@@ -31,6 +32,27 @@ it('preserves KYC boundaries across all three entry points, paging and proxy hea
   expect(new URL(api.mock.lastCall?.[0]).searchParams.get('page_size')).toBe(String(page_size))
  }
  const account=new AccountResource(http), banking=new BankingResource(http)
+ // RFI list/detail and PIN order responses through the real HTTP client.
+ const fixtures=JSON.parse(readFileSync('tests/fixtures/rfi-orders.json','utf8'))
+ for (const rfi of fixtures.rfis) {
+  api.mockResolvedValue(response(rfi))
+  expect(await account.rfis.retrieve(rfi.rfi_id)).toEqual(rfi)
+  expect(new URL(api.mock.lastCall?.[0]).pathname).toBe(`/v1/rfis/${rfi.rfi_id}`)
+  const list={data:[rfi],total_pages:3,total_items:21}
+  api.mockResolvedValue(response(list))
+  expect(await account.rfis.list({page_size:10,page_number:2,status:'ACTION_REQUIRED'})).toEqual(list)
+  const url=new URL(api.mock.lastCall?.[0])
+  expect(url.pathname).toBe('/v1/rfis')
+  expect(Object.fromEntries(url.searchParams)).toEqual({page_size:'10',page_number:'2',status:'ACTION_REQUIRED'})
+  expect(api.mock.lastCall?.[1].method).toBe('GET')
+ }
+ for (const order of fixtures.orders) {
+  api.mockResolvedValue(response(order))
+  expect(await issuing.cards.retrieveOrder(order.card_order_id)).toEqual(order)
+  expect(new URL(api.mock.lastCall?.[0]).pathname).toBe(`/v1/issuing/cards/${order.card_order_id}/order`)
+  expect(api.mock.lastCall?.[1].method).toBe('GET')
+ }
+
  for (const data of [
   {entity_type:'COMPANY',business_details:{legal_entity_name:'Example'}},
   {entity_type:'INDIVIDUAL',person_details:{first_name:'Test'},residential_address:{country:'SG'}},
