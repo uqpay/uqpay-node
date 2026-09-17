@@ -35,9 +35,18 @@ it('preserves KYC boundaries across all three entry points, paging and proxy hea
   {entity_type:'COMPANY',business_details:{legal_entity_name:'Example'}},
   {entity_type:'INDIVIDUAL',person_details:{first_name:'Test'},residential_address:{country:'SG'}},
  ]) {api.mockResolvedValue(response(data));expect(await account.accounts.retrieve('account-1')).toEqual(data)}
- for (const amount of ['-12345678901234567890.12','0.00','1.23']) {
-  const balance={currency:'USD',available_balance:amount,prepaid_balance:'0.00'}
-  api.mockResolvedValue(response(balance));expect(await banking.balances.retrieve('USD')).toEqual(balance)
+ // D122-D129: rotate distinct values so swapped fields cannot pass.
+ const fields=['available_balance','frozen_balance','margin_balance','prepaid_balance'] as const
+ const amounts=['0.00','1.23','-0.01','12345678901234567890.12','-12345678901234567890.12','0.12345678901234567890']
+ for (let i=0;i<amounts.length;i++) {
+  const balance={currency:'USD',...Object.fromEntries(fields.map((field,j)=>[field,amounts[(i+j)%amounts.length]]))}
+  api.mockResolvedValue(response(balance))
+  expect(await banking.balances.retrieve('USD')).toEqual(balance)
+  expect(new URL(api.mock.lastCall?.[0]).pathname).toBe('/v1/balances/USD')
+  const list={data:[balance],total_pages:1,total_items:1}
+  api.mockResolvedValue(response(list))
+  expect(await banking.balances.list({page_size:10,page_number:1})).toEqual(list)
+  expect(new URL(api.mock.lastCall?.[0]).pathname).toBe('/v1/balances')
  }
  const payout={payer:{payer_id:'0',identification_type:''},beneficiary:{address:{country:'SG',city:'',state:'',street_address:''}}}
  api.mockResolvedValue(response(payout));expect(await banking.payouts.retrieve('payout-1')).toEqual(payout)
