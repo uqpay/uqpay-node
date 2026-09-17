@@ -45,8 +45,16 @@ export interface IdentityDocument {
   hand_file?: string
 }
 
+export interface KycProof {
+  provider: 'SUMSUB' | 'MYINFO' | 'JUMIO' | 'DIDIT' | 'SHUFTI' | 'REGTANK'
+  /** Provider reference, 10–64 characters. Validated by the server. */
+  reference_id: string
+}
+
 export interface KycVerification {
-  /** THIRD_PARTY: provide identity data directly. SUMSUB_REDIRECT: redirect to external IDV provider. */
+  /** Required when method is THIRD_PARTY; validated by the server. */
+  kyc_proof?: KycProof
+  /** THIRD_PARTY: provide third-party verification evidence. SUMSUB_REDIRECT: redirect to external IDV provider. */
   method: 'THIRD_PARTY' | 'SUMSUB_REDIRECT'
 }
 
@@ -99,7 +107,7 @@ export interface Card {
   available_balance?: string | number
   cardholder?: Record<string, unknown>
   spending_controls?: SpendingControl[]
-  risk_controls?: RiskControls
+  risk_controls?: RiskControls | null
   metadata?: Record<string, unknown> | string | null
   card_status: CardStatus
   consumed_amount?: string | number
@@ -115,6 +123,9 @@ export interface SecureCardDetails {
 }
 
 export interface UpdateCardParams {
+  /** Available card art. Card and processing status must be ACTIVE; applied asynchronously. */
+  card_art_id?: string
+  name_on_card?: string
   card_limit?: number
   no_pin_payment_amount?: number
   spending_controls?: SpendingControl[]
@@ -341,7 +352,7 @@ export interface Cardholder {
   delivery_address?: DeliveryAddress
   residential_address?: ResidentialAddress
   review_status?: string
-  gender?: Gender
+  gender?: Gender | ''
   nationality?: string
   identity?: IdentityDocument
   idv_status?: IdvStatus
@@ -508,7 +519,7 @@ export interface ProductRequiredField {
 
 export interface CardProduct {
   product_id: string
-  mode_type: 'SHARE' | 'SINGLE'
+  mode_type?: 'SHARE' | 'SINGLE'
   card_bin: string
   card_form: Array<'VIR' | 'PHY'>
   max_card_quota?: number

@@ -48,6 +48,7 @@ export type DepositStatus = 'PENDING' | 'COMPLETED' | 'FAILED'
 
 export interface Deposit {
   deposit_id: string
+  deposit_method?: 'LOCAL' | 'SWIFT' | 'UQPAY_TRANSFER' | ''
   short_reference_id?: string
   currency?: string
   amount?: string
@@ -55,9 +56,11 @@ export interface Deposit {
   deposit_status?: DepositStatus
   deposit_reference?: string
   create_time?: string
-  complete_time?: string
+  complete_time?: string | null
   receiver_account_number?: string
   sender?: {
+    sender_type?: 'COMPANY' | 'INDIVIDUAL' | ''
+    name_type?: 'NAMED' | 'NON_NAMED' | ''
     sender_name?: string
     sender_country?: string
     sender_account_number?: string
@@ -284,19 +287,22 @@ export interface ListBeneficiariesParams {
   company_name?: string
 }
 
-export interface CheckBeneficiaryParams {
+/** At least one non-empty account_number or iban; account_number takes precedence when both are sent. */
+export type CheckBeneficiaryParams = {
   entity_type: BeneficiaryEntityType
-  account_number: string
   payment_method: 'LOCAL' | 'SWIFT'
   currency: string
-  bank_country_code: string
+  /** Conditional on payment method and currency. */
+  bank_country_code?: string
   first_name?: string
   last_name?: string
   company_name?: string
   clearing_system?: string
-  iban?: string
   additional_info?: Record<string, unknown>
-}
+} & (
+  | { account_number: string; iban?: string }
+  | { account_number?: string; iban: string }
+)
 
 // ─── Conversions ──────────────────────────────────────────────────────────────
 
