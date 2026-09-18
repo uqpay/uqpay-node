@@ -49,6 +49,20 @@ it('preserves KYC boundaries across all three entry points, paging and proxy hea
   expect(new URL(api.mock.lastCall?.[0]).pathname).toBe(fixture.path)
   expect(api.mock.lastCall?.[1].method).toBe('GET')
  }
+ // Frozen beneficiary check routing and optional response addresses.
+ for (const fixture of JSON.parse(readFileSync('tests/fixtures/beneficiary-contract.json','utf8'))) {
+  api.mockResolvedValue(response(fixture.body))
+  const operations: Record<string,()=>Promise<unknown>>={
+   check:()=>banking.beneficiaries.check(fixture.request),
+   list:()=>banking.beneficiaries.list({page_size:10,page_number:1}),
+   get:()=>banking.beneficiaries.retrieve('beneficiary-1'),
+  }
+  const call=operations[fixture.operation];if(!call)throw new Error(fixture.operation)
+  expect(await call(),fixture.name).toEqual(fixture.body)
+  expect(new URL(api.mock.lastCall?.[0]).pathname).toBe(fixture.path)
+  expect(api.mock.lastCall?.[1].method).toBe(fixture.operation==='check'?'POST':'GET')
+  if(fixture.operation==='check')expect(JSON.parse(api.mock.lastCall?.[1].body)).toEqual(fixture.request)
+ }
  // Frozen issuing responses: list/detail wire shapes are deliberately distinct.
  for (const fixture of JSON.parse(readFileSync('tests/fixtures/issuing-responses.json','utf8'))) {
   api.mockResolvedValue(response(fixture.body))
