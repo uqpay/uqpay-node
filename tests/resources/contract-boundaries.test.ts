@@ -1,3 +1,4 @@
+import { SimulatorResource } from '../../src/resources/simulator/index.js'
 import { readFileSync } from 'node:fs'
 import { expect, it, vi } from 'vitest'
 import { HttpClient } from '../../src/http.js'
@@ -142,6 +143,23 @@ it('preserves KYC boundaries across all three entry points, paging and proxy hea
  api.mockResolvedValue(response(payout));expect(await banking.payouts.retrieve('payout-1')).toEqual(payout)
  api.mockResolvedValue(response({}))
  const payment = new PaymentResource(http,'client')
+ const simulator = new SimulatorResource(http,'https://api-sandbox.example.test')
+ for (const fixture of JSON.parse(readFileSync('tests/fixtures/remaining-responses.json','utf8'))) {
+  api.mockResolvedValue(response(fixture.body))
+  const calls:Record<string,()=>Promise<unknown>>={
+   payout:()=>banking.payouts.retrieve('po-1'),transaction:()=>issuing.transactions.retrieve('tx-1'),
+   authorization:()=>simulator.issuing.authorize(fixture.request),
+   'bank.get':()=>payment.bankAccounts.retrieve('ba-1'),'bank.list':()=>payment.bankAccounts.list({page_size:10,page_number:1}),
+   'bank.create':()=>payment.bankAccounts.create(fixture.request),
+   'intent.get':()=>payment.paymentIntents.retrieve('pi-1'),'intent.create':()=>payment.paymentIntents.create(fixture.request),'intent.confirm':()=>payment.paymentIntents.confirm('pi-1',fixture.request),
+   attempt:()=>payment.paymentAttempts.retrieve('pa-1'),
+  }
+  const call=calls[fixture.operation];if(!call)throw new Error(fixture.operation)
+  expect(await call(),fixture.operation+':'+fixture.name).toEqual(fixture.body)
+  expect(new URL(api.mock.lastCall?.[0]).pathname).toBe(fixture.path)
+  expect(api.mock.lastCall?.[1].method).toBe(fixture.method)
+ }
+
  // AQ-RESPONSE: per-operation missing/empty/populated fixtures.
  const restCases = [
   [() => payment.paymentAttempts.retrieve('pa-1'), [{},{complete_time:'',advice_code:'',authentication_data:{cvv_result:''}},{complete_time:'2026-09-17T00:00:00Z',advice_code:'01',authentication_data:{cvv_result:'M'}}]],
