@@ -49,6 +49,13 @@ it('preserves KYC boundaries across all three entry points, paging and proxy hea
   expect(new URL(api.mock.lastCall?.[0]).pathname).toBe(fixture.path)
   expect(api.mock.lastCall?.[1].method).toBe('GET')
  }
+ // Frozen deposit detail: independent rail/entity/name classifications.
+ for (const fixture of JSON.parse(readFileSync('tests/fixtures/deposit-contract.json','utf8'))) {
+  api.mockResolvedValue(response(fixture.body))
+  expect(await banking.deposits.retrieve('deposit-1'),fixture.name).toEqual(fixture.body)
+  expect(new URL(api.mock.lastCall?.[0]).pathname).toBe('/v1/deposit/deposit-1')
+  expect(api.mock.lastCall?.[1].method).toBe('GET')
+ }
  // Frozen beneficiary check routing and optional response addresses.
  for (const fixture of JSON.parse(readFileSync('tests/fixtures/beneficiary-contract.json','utf8'))) {
   api.mockResolvedValue(response(fixture.body))
