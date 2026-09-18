@@ -1,6 +1,6 @@
 # UQPay Node.js SDK
 
-> This branch prepares SDK/CLI **4.0.0 (unreleased)**. Review [contract migration guidance](CONTRACT_ALIGNMENT.md) before upgrading. Public downloads remain on the published version until a release is explicitly announced.
+> SDK/CLI **4.0.0** was released on **2026-09-18**. Review [contract migration guidance](CONTRACT_ALIGNMENT.md) before upgrading.
 
 
 Official Node.js SDK for the [UQPAY API](https://developers.uqpay.com/).
