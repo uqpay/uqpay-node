@@ -49,6 +49,23 @@ it('preserves KYC boundaries across all three entry points, paging and proxy hea
   expect(new URL(api.mock.lastCall?.[0]).pathname).toBe(fixture.path)
   expect(api.mock.lastCall?.[1].method).toBe('GET')
  }
+ // Frozen issuing responses: list/detail wire shapes are deliberately distinct.
+ for (const fixture of JSON.parse(readFileSync('tests/fixtures/issuing-responses.json','utf8'))) {
+  api.mockResolvedValue(response(fixture.body))
+  const operations: Record<string,()=>Promise<unknown>>={
+   'cards.list':()=>issuing.cards.list({page_size:10,page_number:1}),
+   'cards.get':()=>issuing.cards.retrieve('card-1'),
+   'cardholders.list':()=>issuing.cardholders.list({page_size:10,page_number:1}),
+   'cardholders.get':()=>issuing.cardholders.retrieve('holder-1'),
+   'products.list':()=>issuing.products.list({page_size:10,page_number:1}),
+   'cards.status':()=>issuing.cards.updateStatus('card-1',{card_status:'FROZEN'}),
+  }
+  const call=operations[fixture.operation]
+  if (!call) throw new Error(`Unknown operation: ${fixture.operation}`)
+  expect(await call(),fixture.operation+':'+fixture.name).toEqual(fixture.body)
+  expect(new URL(api.mock.lastCall?.[0]).pathname).toBe(fixture.path)
+  expect(api.mock.lastCall?.[1].method).toBe(fixture.operation==='cards.status'?'POST':'GET')
+ }
  // D044/D094: settlement status is detail-only; missing detail is legacy robustness.
  for (const status of ['UNKNOWN','UNSETTLED','SETTLED','NOT_APPLICABLE',undefined] as const) {
   const detail={transaction_id:'tx-1',...(status===undefined?{}:{settlement_status:status})}
