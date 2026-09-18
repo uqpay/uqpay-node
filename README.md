@@ -1,6 +1,6 @@
 # UQPay Node.js SDK
 
-> SDK/CLI **3.1.0** is being prepared as a version-number correction of 4.0.0. Review [contract migration guidance](CONTRACT_ALIGNMENT.md) before upgrading. It is not yet published.
+> SDK/CLI **3.1.0** retains the complete 4.0.0 feature set under the 3.x version line. Review [contract migration guidance](CONTRACT_ALIGNMENT.md) before upgrading.
 
 
 Official Node.js SDK for the [UQPAY API](https://developers.uqpay.com/).
