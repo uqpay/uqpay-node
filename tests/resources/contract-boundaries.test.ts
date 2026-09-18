@@ -32,6 +32,23 @@ it('preserves KYC boundaries across all three entry points, paging and proxy hea
   expect(new URL(api.mock.lastCall?.[0]).searchParams.get('page_size')).toBe(String(page_size))
  }
  const account=new AccountResource(http), banking=new BankingResource(http)
+ // Frozen account summaries/details and issuing money: every fixture field is asserted.
+ const moneyCases=JSON.parse(readFileSync('tests/fixtures/account-money.json','utf8'))
+ for (const fixture of moneyCases) {
+  api.mockResolvedValue(response(fixture.body))
+  const operations: Record<string,()=>Promise<unknown>>={
+   'accounts.list':()=>account.accounts.list({page_size:10,page_number:1}),
+   'accounts.get':()=>account.accounts.retrieve('account-1'),
+   'transactions.get':()=>issuing.transactions.retrieve('tx-1'),
+   'transactions.list':()=>issuing.transactions.list({page_size:10,page_number:1}),
+   'transfers.get':()=>issuing.transfers.retrieve('transfer-1'),
+  }
+  const call=operations[fixture.operation]
+  if (!call) throw new Error(`Unknown operation: ${fixture.operation}`)
+  expect(await call()).toEqual(fixture.body)
+  expect(new URL(api.mock.lastCall?.[0]).pathname).toBe(fixture.path)
+  expect(api.mock.lastCall?.[1].method).toBe('GET')
+ }
  // D044/D094: settlement status is detail-only; missing detail is legacy robustness.
  for (const status of ['UNKNOWN','UNSETTLED','SETTLED','NOT_APPLICABLE',undefined] as const) {
   const detail={transaction_id:'tx-1',...(status===undefined?{}:{settlement_status:status})}
