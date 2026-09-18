@@ -32,6 +32,19 @@ it('preserves KYC boundaries across all three entry points, paging and proxy hea
   expect(new URL(api.mock.lastCall?.[0]).searchParams.get('page_size')).toBe(String(page_size))
  }
  const account=new AccountResource(http), banking=new BankingResource(http)
+ // D044/D094: settlement status is detail-only; missing detail is legacy robustness.
+ for (const status of ['UNKNOWN','UNSETTLED','SETTLED','NOT_APPLICABLE',undefined] as const) {
+  const detail={transaction_id:'tx-1',...(status===undefined?{}:{settlement_status:status})}
+  api.mockResolvedValue(response(detail))
+  expect(await issuing.transactions.retrieve('tx-1')).toEqual(detail)
+  expect(new URL(api.mock.lastCall?.[0]).pathname).toBe('/v1/issuing/transactions/tx-1')
+  expect(api.mock.lastCall?.[1].method).toBe('GET')
+ }
+ const txList={data:[{transaction_id:'tx-1'}],total_pages:1,total_items:1}
+ api.mockResolvedValue(response(txList))
+ expect(await issuing.transactions.list({page_size:10,page_number:1})).toEqual(txList)
+ expect(new URL(api.mock.lastCall?.[0]).pathname).toBe('/v1/issuing/transactions')
+ expect(api.mock.lastCall?.[1].method).toBe('GET')
  // RFI list/detail and PIN order responses through the real HTTP client.
  const fixtures=JSON.parse(readFileSync('tests/fixtures/rfi-orders.json','utf8'))
  for (const rfi of fixtures.rfis) {
