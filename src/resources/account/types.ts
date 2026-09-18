@@ -243,6 +243,8 @@ export interface ContactDetails {
 }
 
 export interface RetrieveAccountResponse {
+  person_details?: Record<string, unknown>
+  residential_address?: Record<string, unknown>
   account_id: string
   short_reference_id?: string
   business_code?: BusinessType[]
@@ -441,13 +443,30 @@ export type RfiStatus = 'SUBMITTED_PENDING' | 'REJECTED' | 'APPROVED' | 'ACTION_
 
 export interface RfiAnswerItem {
   key: string
-  type: 'ATTACHMENT'
-  attachments: string[]
+  type: 'ATTACHMENT' | 'TEXT'
+  /** Non-empty when type is TEXT. */
+  text?: string
+  /** Uploaded file IDs when type is ATTACHMENT. */
+  attachments?: string[]
+}
+
+export interface RfiAttachment {
+  file_type?: string
+  file_name?: string
+  size?: number
+  url?: string
+}
+
+export interface RfiAnswerResponse {
+  key?: string
+  type?: 'ATTACHMENT' | 'TEXT'
+  text?: string
+  attachments?: RfiAttachment[]
 }
 
 export interface RfiRequestItem {
-  question: { key: string; comment?: string; type: 'ATTACHMENT' }
-  answer?: RfiAnswerItem
+  question: { key: string; comment?: string; type: 'ATTACHMENT' | 'TEXT' }
+  answer?: RfiAnswerResponse
 }
 
 export interface Rfi {

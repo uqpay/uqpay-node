@@ -1,5 +1,8 @@
 # UQPay Node.js SDK
 
+> This branch prepares SDK/CLI **4.0.0 (unreleased)**. Review [contract migration guidance](CONTRACT_ALIGNMENT.md) before upgrading. Public downloads remain on the published version until a release is explicitly announced.
+
+
 Official Node.js SDK for the [UQPAY API](https://developers.uqpay.com/).
 
 ## Requirements
@@ -307,6 +310,8 @@ await client.simulator.issuing.reverse({
 
 // Simulate a deposit
 const deposit = await client.simulator.deposits.simulate({
+  account_id: 'account-id',
+  sender_swift_code: 'WELGBE22',
   currency: 'SGD',
   amount: 500,
 })
@@ -568,3 +573,7 @@ Full API reference: [https://developers.uqpay.com/](https://developers.uqpay.com
 ## License
 
 MIT
+
+## Contract migration notes
+
+See [PIN, RFI, deposit simulation and settlement contracts](CONTRACT_ALIGNMENT.md) for request changes and response interpretation.

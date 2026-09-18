@@ -92,6 +92,7 @@ export class CardsResource extends BaseResource {
     return this._deleteWithBody<NetworkProtectionResponse>(`/v1/issuing/cards/${id}/risk`, params, options)
   }
 
+  /** Manage a PIN: omitted type is SET; explicitly use RESET or UPDATE as needed. */
   resetPin(params: ResetPinParams, options?: RequestOptions): Promise<ResetPinResponse> {
     return this._post<ResetPinResponse>('/v1/issuing/cards/pin', params, options)
   }

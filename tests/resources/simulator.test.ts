@@ -57,7 +57,7 @@ describe('SimulatorResource', () => {
     it('calls POST /v1/simulation/deposit', async () => {
       const apiFetch = mockJson({ deposit_id: 'dep-1', short_reference_id: 'REF1', amount: '100', currency: 'SGD', deposit_status: 'PENDING', create_time: '2024-01-01T00:00:00Z' })
       const resource = makeResource(apiFetch)
-      const result = await resource.deposits.simulate({ amount: 100, currency: 'SGD', sender_swift_code: 'DBSSSGSG' })
+      const result = await resource.deposits.simulate({ account_id: 'account-1', amount: 100, currency: 'SGD', sender_swift_code: 'DBSSSGSG' })
       expect(result.deposit_id).toBe('dep-1')
       const url = apiFetch.mock.calls[0]?.[0] as string
       expect(url).toContain('/v1/simulation/deposit')
@@ -80,7 +80,7 @@ describe('SimulatorResource', () => {
     it('does not call fetch when production guard throws', () => {
       const apiFetch = vi.fn()
       const resource = makeResource(apiFetch, 'https://api.uqpay.com/api')
-      expect(() => resource.deposits.simulate({ amount: 1, currency: 'SGD', sender_swift_code: 'DBSSSGSG' })).toThrow(SimulatorNotAvailableError)
+      expect(() => resource.deposits.simulate({ account_id: 'account-1', amount: 1, currency: 'SGD', sender_swift_code: 'DBSSSGSG' })).toThrow(SimulatorNotAvailableError)
       expect(apiFetch).not.toHaveBeenCalled()
     })
   })

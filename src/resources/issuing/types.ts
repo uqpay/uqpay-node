@@ -45,12 +45,25 @@ export interface IdentityDocument {
   hand_file?: string
 }
 
+export interface KycProof {
+  provider: 'SUMSUB' | 'MYINFO' | 'JUMIO' | 'DIDIT' | 'SHUFTI' | 'REGTANK'
+  /** Provider reference, 10–64 characters. Validated by the server. */
+  reference_id: string
+}
+
 export interface KycVerification {
-  /** THIRD_PARTY: provide identity data directly. SUMSUB_REDIRECT: redirect to external IDV provider. */
+  /** Required when method is THIRD_PARTY; validated by the server. */
+  kyc_proof?: KycProof
+  /** THIRD_PARTY: provide third-party verification evidence. SUMSUB_REDIRECT: redirect to external IDV provider. */
   method: 'THIRD_PARTY' | 'SUMSUB_REDIRECT'
 }
 
 export interface CardholderRequiredFields {
+  email?: string
+  first_name?: string
+  last_name?: string
+  country_code?: string
+
   gender?: Gender
   nationality?: string
   phone_number?: string
@@ -99,7 +112,7 @@ export interface Card {
   available_balance?: string | number
   cardholder?: Record<string, unknown>
   spending_controls?: SpendingControl[]
-  risk_controls?: RiskControls
+  risk_controls?: RiskControls | null
   metadata?: Record<string, unknown> | string | null
   card_status: CardStatus
   consumed_amount?: string | number
@@ -115,6 +128,9 @@ export interface SecureCardDetails {
 }
 
 export interface UpdateCardParams {
+  /** Available card art. Card and processing status must be ACTIVE; applied asynchronously. */
+  card_art_id?: string
+  name_on_card?: string
   card_limit?: number
   no_pin_payment_amount?: number
   spending_controls?: SpendingControl[]
@@ -195,6 +211,8 @@ export interface ListCardsParams {
 }
 
 export interface CardOrderResponse {
+  failure_code?: string
+  complete_time?: string
   card_id?: string
   card_order_id?: string
   order_type?: string
@@ -238,8 +256,20 @@ export interface NetworkProtectionResponse {
   update_time?: string | null
 }
 
-export interface ResetPinParams { card_id: string; pin: string }
-export interface ResetPinResponse { request_status: 'SUCCESS' }
+/** PIN management. Omitted type means SET; both PIN values use six digits. */
+export type ResetPinParams = { card_id: string; pin: string } & (
+  | { type?: 'SET'; old_pin?: never }
+  | { type: 'RESET'; old_pin?: never }
+  | { type: 'UPDATE'; old_pin: string }
+)
+/** Acceptance is asynchronous; retrieve card_order_id for the final result. */
+export interface ResetPinResponse {
+  request_status: 'SUCCESS'
+  card_id: string
+  card_order_id: string
+  order_status: 'PROCESSING'
+  create_time: string
+}
 
 export type ManageCardPinParams =
   | { card_id: string; type: 'SET'; pin: string; old_pin?: never }
@@ -327,7 +357,7 @@ export interface Cardholder {
   delivery_address?: DeliveryAddress
   residential_address?: ResidentialAddress
   review_status?: string
-  gender?: Gender
+  gender?: Gender | ''
   nationality?: string
   identity?: IdentityDocument
   idv_status?: IdvStatus
@@ -406,13 +436,15 @@ export interface IssuingBalanceTransaction {
 // ─── Card Transactions ────────────────────────────────────────────────────────
 
 export interface MerchantData {
-  category_code: string
-  city: string
-  country: string
-  name: string
+  category_code?: string
+  city?: string
+  country?: string
+  name?: string
 }
 
 export interface CardTransaction {
+  /** Detail only. SETTLED includes partial clearing, not necessarily the full amount. */
+  settlement_status?: 'UNKNOWN' | 'UNSETTLED' | 'SETTLED' | 'NOT_APPLICABLE'
   card_id: string
   card_number: string
   cardholder_id: string
@@ -492,7 +524,7 @@ export interface ProductRequiredField {
 
 export interface CardProduct {
   product_id: string
-  mode_type: 'SHARE' | 'SINGLE'
+  mode_type?: 'SHARE' | 'SINGLE'
   card_bin: string
   card_form: Array<'VIR' | 'PHY'>
   max_card_quota?: number
@@ -516,6 +548,7 @@ export interface ListProductsParams {
 
 /** Payload for event_type: 'cardholder.kyc.status_changed' */
 export interface CardholderKycStatusChangedPayload {
+  reason?: string
   cardholder_id: string
   email: string
   first_name: string
@@ -534,6 +567,7 @@ export interface CardholderKycStatusChangedPayload {
 
 /** Payload for event_type: 'cardholder.updated' */
 export interface CardholderUpdatedPayload {
+  reason?: string
   cardholder_id: string
   email: string
   first_name: string

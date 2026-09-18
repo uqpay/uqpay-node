@@ -35,6 +35,7 @@ export interface SimulateReversalParams {
 // ─── Deposit Simulator ────────────────────────────────────────────────────────
 
 export interface SimulateDepositParams {
+  account_id: string
   amount: number
   currency: string
   sender_swift_code: string

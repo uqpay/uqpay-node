@@ -211,6 +211,7 @@ export type {
   ResidentialAddress,
   IdentityDocument,
   KycVerification,
+  KycProof,
   CreateCardholderParams,
   CreateCardholderResponse,
   Cardholder,

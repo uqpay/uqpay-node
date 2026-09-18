@@ -61,13 +61,13 @@ export interface PaymentIntent {
   cancellation_reason?: string
   client_secret?: string
   merchant_order_id?: string
-  metadata?: Record<string, string>
-  next_action?: Record<string, unknown>
+  metadata?: Record<string, string> | null
+  next_action?: Record<string, unknown> | null
   return_url?: string
   create_time?: string
   complete_time?: string
   update_time?: string
-  latest_payment_attempt?: PaymentAttempt
+  latest_payment_attempt?: PaymentAttempt | null
 }
 
 export interface ListPaymentIntentsParams {
@@ -98,6 +98,7 @@ export interface CreateRefundParams {
 }
 
 export interface Refund {
+  metadata?: Record<string, string> | null
   payment_refund_id: string
   payment_attempt_id: string
   amount: string
@@ -225,9 +226,9 @@ export interface PaymentAttempt {
   auth_code?: string
   arn?: string
   rrn?: string
-  advice_code?: '01' | '02' | '03' | '21' | '85'
+  advice_code?: '01' | '02' | '03' | '21' | '85' | ''
   authentication_data?: {
-    cvv_result?: 'M' | 'N' | 'P' | 'U'
+    cvv_result?: 'M' | 'N' | 'P' | 'U' | ''
     avs_result?: string
     three_ds?: Record<string, unknown>
   }
