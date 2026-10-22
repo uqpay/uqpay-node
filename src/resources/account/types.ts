@@ -33,6 +33,8 @@ export interface Representative {
   identification_value: string
   identity_docs: string[]
   other_documents?: Array<{ type: string; doc_str: string }>
+  /** Optional base64-encoded face documents or uploaded file IDs. */
+  face_docs?: string[]
 }
 
 export interface TosAcceptance {
@@ -392,6 +394,7 @@ export interface CreateAccountBusinessDetails {
     | 'LIMITED_COMPANY'
     | 'PARTNERSHIP'
     | 'LISTED'
+    | 'INDIVIDUAL_MERCHANT'
     | 'OTHERS'
   product_description: string
   merchant_category_code: string

@@ -45,6 +45,23 @@ export interface IdentityDocument {
   hand_file?: string
 }
 
+/** Collected response fields may be absent even for a successful cardholder. */
+export interface ResidentialAddressResponse extends Partial<Omit<ResidentialAddress, 'line2'>> {
+  line2?: string | null
+}
+
+/** Cardholder create/update supporting materials; document details may be omitted on update. */
+export interface CardholderIdentity extends Partial<IdentityDocument> {
+  /** Base64 content; omitted, empty or null preserves the saved file. */
+  proof_of_address?: string | null
+  /** Required when uploading a new POA (YYYY-MM-DD). */
+  proof_of_address_issue_date?: string
+  /** Required when uploading a new POA (ISO 3166-1 alpha-2). */
+  proof_of_address_issuing_country?: string
+  /** KYC provider result file; does not replace POA or kyc_verification.kyc_proof. */
+  identity_verification?: string | null
+}
+
 export interface KycProof {
   provider: 'SUMSUB' | 'MYINFO' | 'JUMIO' | 'DIDIT' | 'SHUFTI' | 'REGTANK'
   /** Provider reference, 10–64 characters. Validated by the server. */
@@ -75,7 +92,8 @@ export interface CardholderRequiredFields {
 
 export interface CreateCardParams {
   card_currency: 'SGD' | 'USD'
-  cardholder_id: string
+  /** Omit for one-step issuance or the Business Visa company authorized person. */
+  cardholder_id?: string
   card_product_id: string
   card_limit?: number
   spending_controls?: SpendingControl[]
@@ -162,10 +180,13 @@ export interface ActivateCardResponse {
 }
 
 export interface AssignCardParams {
-  cardholder_id: string
+  /** Business Visa may omit this to use the company authorized person. */
+  cardholder_id?: string
   card_number: string
   card_currency: string
   card_mode: 'SINGLE' | 'SHARE'
+  /** Personal Visa requires a 12-character card_sku_code; omit metadata for other products. */
+  metadata?: { card_sku_code: string }
 }
 
 export interface PanTokenResponse {
@@ -331,7 +352,7 @@ export interface CreateCardholderParams {
   document?: string
   gender?: Gender
   nationality?: string
-  identity?: IdentityDocument
+  identity?: CardholderIdentity & Required<Pick<IdentityDocument, 'type' | 'number' | 'front_file'>>
   kyc_verification?: KycVerification
 }
 
@@ -355,11 +376,11 @@ export interface Cardholder {
   phone_number: string
   /** @deprecated Use residential_address instead */
   delivery_address?: DeliveryAddress
-  residential_address?: ResidentialAddress
+  residential_address?: ResidentialAddressResponse
   review_status?: string
   gender?: Gender | ''
   nationality?: string
-  identity?: IdentityDocument
+  identity?: CardholderIdentity
   idv_status?: IdvStatus
   idv_verification_url?: string
   idv_url_expires_at?: string
@@ -377,7 +398,7 @@ export interface UpdateCardholderParams {
   date_of_birth?: string
   gender?: Gender
   nationality?: string
-  identity?: IdentityDocument
+  identity?: CardholderIdentity
   kyc_verification?: KycVerification
 }
 

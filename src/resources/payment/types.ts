@@ -1,15 +1,20 @@
 // ─── Payment Intents ──────────────────────────────────────────────────────────
 
+export type AuthorizationType = 'authorization' | 'pre_authorization'
+
 export type PaymentIntentStatus =
   | 'REQUIRES_PAYMENT_METHOD'
   | 'REQUIRES_CUSTOMER_ACTION'
   | 'REQUIRES_CAPTURE'
+  | 'PARTIALLY_CAPTURED'
+  | 'EXPIRED'
   | 'PENDING'
   | 'SUCCEEDED'
   | 'CANCELLED'
   | 'FAILED'
 
 export interface CreatePaymentIntentParams {
+  authorization_type?: AuthorizationType
   amount: string
   currency: string
   merchant_order_id: string
@@ -35,6 +40,7 @@ export interface UpdatePaymentIntentParams {
 }
 
 export interface ConfirmPaymentIntentParams {
+  authorization_type?: AuthorizationType
   payment_method?: Record<string, unknown>
   ip_address?: string
   browser_info?: Record<string, unknown>
@@ -42,6 +48,8 @@ export interface ConfirmPaymentIntentParams {
 }
 
 export interface CapturePaymentIntentParams {
+  merchant_capture_order_id?: string
+  final_capture?: true
   amount_to_capture?: string
 }
 
@@ -49,7 +57,33 @@ export interface CancelPaymentIntentParams {
   cancellation_reason?: 'duplicate' | 'fraudulent' | 'requested_by_customer' | 'abandoned'
 }
 
+export interface CaptureRecord {
+  capture_id?: string
+  merchant_capture_order_id?: string | null
+  capture_sequence?: number
+  capture_amount?: string
+  currency?: string
+  capture_mode?: 'final' | 'non_final'
+  channel_capture_status?: 0 | 1 | 2 | 3
+  arn?: string
+  channel_capture_time?: string | null
+  request_time?: string
+  complete_time?: string | null
+}
+
+/** Acknowledges capture acceptance; inspect capture_records for channel completion. */
+export interface PaymentIntentCaptureResponse extends PaymentIntent {
+  capture_id?: string
+  merchant_capture_order_id?: string
+}
+
 export interface PaymentIntent {
+  authorization_expires_at?: string | null
+  available_to_capture?: string
+  available_to_void?: string
+  current_funds_action?: Record<string, unknown>
+  capture_records?: CaptureRecord[]
+  authorization_type?: AuthorizationType
   payment_intent_id: string
   amount: string
   currency: string
@@ -73,8 +107,14 @@ export interface PaymentIntent {
 export interface ListPaymentIntentsParams {
   page_size?: number
   page_number?: number
+  payment_intent_status?: PaymentIntentStatus
+  start_time?: string
+  end_time?: string
+  /** @deprecated Use payment_intent_status. The wire key takes precedence when both are supplied. */
   intent_status?: PaymentIntentStatus
+  /** @deprecated Use start_time. */
   create_start_time?: string
+  /** @deprecated Use end_time. */
   create_end_time?: string
 }
 
@@ -214,9 +254,11 @@ export type PaymentAttemptStatus =
   | 'FAILED'
 
 export interface PaymentAttempt {
+  authorization_type?: AuthorizationType
   attempt_id: string
   amount: string
   currency: string
+  /** @deprecated Not returned by the current PaymentAttempt contract. */
   captured_amount?: string
   refunded_amount?: string
   create_time?: string
