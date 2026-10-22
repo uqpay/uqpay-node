@@ -19,6 +19,10 @@ Targeted regressions exercise request method/path, serialization, response decod
 
 `paymentMethods.list()` returns an envelope: use `result.data` instead of treating the result as an array. Validation rules may be strings or structured rule objects. `Cardholder.residential_address` can be sparse and `line2` can be null; narrow fields before using them. `capture()` returns `PaymentIntentCaptureResponse`, which extends `PaymentIntent`. New types are exported from `@uqpay/sdk`.
 
+### Cross-client contract details
+
+Payment intent list accepts `payment_intent_status`, `start_time`, and `end_time`. The existing `intent_status`, `create_start_time`, and `create_end_time` aliases remain accepted and map to the corresponding wire keys. When both forms are supplied, the canonical key takes precedence, including an empty value. Assignment accepts optional `metadata.card_sku_code` for Personal Visa; other products do not require metadata merely because this field exists.
+
 ## Published 3.1.0 baseline
 
 Compatibility cohort: **3.1.0**. This release preserves the 4.0.0 API behavior under the 3.x version line. It does not restore the 3.0.0 API contract; the migration requirements below still apply.

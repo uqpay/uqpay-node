@@ -107,8 +107,14 @@ export interface PaymentIntent {
 export interface ListPaymentIntentsParams {
   page_size?: number
   page_number?: number
+  payment_intent_status?: PaymentIntentStatus
+  start_time?: string
+  end_time?: string
+  /** @deprecated Use payment_intent_status. The wire key takes precedence when both are supplied. */
   intent_status?: PaymentIntentStatus
+  /** @deprecated Use start_time. */
   create_start_time?: string
+  /** @deprecated Use end_time. */
   create_end_time?: string
 }
 

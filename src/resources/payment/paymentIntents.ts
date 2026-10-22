@@ -12,7 +12,14 @@ export class PaymentIntentsResource extends PaymentBaseResource {
   }
 
   list(params?: ListPaymentIntentsParams, options?: RequestOptions): Promise<PaginatedResponse<PaymentIntent>> {
-    return this._get<PaginatedResponse<PaymentIntent>>(`/v2/payment_intents${params ? this._qs(params) : ''}`, options)
+    if (!params) return this._get<PaginatedResponse<PaymentIntent>>('/v2/payment_intents', options)
+    const { intent_status, create_start_time, create_end_time, ...query } = params
+    return this._get<PaginatedResponse<PaymentIntent>>(`/v2/payment_intents${this._qs({
+      ...query,
+      payment_intent_status: query.payment_intent_status !== undefined ? query.payment_intent_status : intent_status,
+      start_time: query.start_time !== undefined ? query.start_time : create_start_time,
+      end_time: query.end_time !== undefined ? query.end_time : create_end_time,
+    })}`, options)
   }
 
   retrieve(id: string, options?: RequestOptions): Promise<PaymentIntent> {

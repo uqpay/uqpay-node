@@ -185,6 +185,8 @@ export interface AssignCardParams {
   card_number: string
   card_currency: string
   card_mode: 'SINGLE' | 'SHARE'
+  /** Personal Visa requires a 12-character card_sku_code; omit metadata for other products. */
+  metadata?: { card_sku_code: string }
 }
 
 export interface PanTokenResponse {

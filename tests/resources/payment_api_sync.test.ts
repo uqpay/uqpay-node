@@ -44,3 +44,29 @@ it('preserves chargeback alert fields, updated statuses and card issuer countrie
   expect(verifier.constructEvent(raw, {'x-wk-signature': signature, 'x-wk-timestamp': timestamp})).toEqual(event)
  }
 })
+
+import type { ListPaymentIntentsParams } from '../../src/resources/payment/types.js'
+it('maps legacy list aliases to wire keys and preserves explicit empty values and zero pagination', async () => {
+ const apiFetch = vi.fn().mockResolvedValue({ok: true, status: 200, headers: {get: () => 'application/json'}, json: async () => ({data: [], total_pages: 0, total_items: 0})})
+ const token = ['eyJhbGciOiJIUzI1NiJ9', Buffer.from(JSON.stringify({entity_id: 'a1', short_entity_id: 'CB001', parent_entity_id: '0', client_id: 'c1', api_version: 'V1.0', bus_type: 'PAYMENT', exp: 4102444800})).toString('base64url'), 'sig'].join('.')
+ const tokenFetch = vi.fn().mockResolvedValue({ok: true, status: 200, json: async () => ({auth_token: token, expired_at: 4102444800})})
+ const resource = new PaymentResource(new HttpClient('https://example.test', new TokenManager('c1', 'offline-key', 'https://example.test', tokenFetch), new Logger('none'), 'c1', '3.1.0', 30000, apiFetch), 'c1')
+ const cases: {params?: ListPaymentIntentsParams; expected: Record<string, string>}[] = [
+  {params: {intent_status: 'EXPIRED', create_start_time: '2026-10-22T00:00:00+08:00', create_end_time: 'legacy-end'}, expected: {payment_intent_status: 'EXPIRED', start_time: '2026-10-22T00:00:00+08:00', end_time: 'legacy-end'}},
+  {params: {payment_intent_status: 'PARTIALLY_CAPTURED', start_time: 'wire-start', end_time: 'wire-end', intent_status: 'EXPIRED', create_start_time: 'legacy-start', create_end_time: 'legacy-end'}, expected: {payment_intent_status: 'PARTIALLY_CAPTURED', start_time: 'wire-start', end_time: 'wire-end'}},
+  {params: {start_time: '', end_time: '', create_start_time: 'legacy-start', create_end_time: 'legacy-end', page_size: 0, page_number: 0}, expected: {start_time: '', end_time: '', page_size: '0', page_number: '0'}},
+  // JavaScript callers may explicitly pass undefined despite exactOptionalPropertyTypes.
+  {params: {payment_intent_status: undefined, start_time: undefined, end_time: undefined, intent_status: 'EXPIRED', create_start_time: '', create_end_time: ''} as unknown as ListPaymentIntentsParams, expected: {payment_intent_status: 'EXPIRED', start_time: '', end_time: ''}},
+  {params: {payment_intent_status: '' as PaymentIntentStatus, intent_status: 'EXPIRED'}, expected: {payment_intent_status: ''}},
+  {expected: {}},
+ ]
+ for (const {params, expected} of cases) {
+  await resource.paymentIntents.list(params)
+  const call = apiFetch.mock.calls.at(-1)!
+  const url = new URL(call[0])
+  expect(call[1].method).toBe('GET')
+  expect(url.pathname).toBe('/v2/payment_intents')
+  expect(Object.fromEntries(url.searchParams)).toEqual(expected)
+  for (const key of ['intent_status', 'create_start_time', 'create_end_time']) expect(url.searchParams.has(key)).toBe(false)
+ }
+})
