@@ -3,7 +3,20 @@
 All notable changes to `@uqpay/sdk` are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and releases use the UQPAY custom `3.MINOR.PATCH` policy: MINOR can require migration. Pin exact versions and review cumulative migration notes.
+
+## [3.2.0]
+
+### Added
+
+- Align with English v1.6 contract `16d84adb1a6275004c5e223ddcc18d64feedfc8e`: CARD beneficiaries, payout validation, cardholder supporting documents and Business Visa default holders, acquiring authorization/capture options and response fields.
+- Preserve company supporting documents, payment-intent list aliases and Personal Visa assignment metadata.
+
+### Migration from 3.1.0
+
+- Read payment-method results through `result.data`; narrow structured validation rules and sparse cardholder addresses before accessing fields. Capture results use `PaymentIntentCaptureResponse`.
+- See [contract and migration guidance](CONTRACT_ALIGNMENT.md#320-contract-update) for field semantics and limitations. Existing 3.1.0/4.0.0 migration guidance remains applicable for older upgrades.
+- Runtime and dependency support ranges are unchanged. Offline request/response and package checks do not establish Production rollout or business completion.
 
 ## [3.1.0]
 
