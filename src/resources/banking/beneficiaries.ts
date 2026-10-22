@@ -18,6 +18,7 @@ export class BeneficiariesResource extends BaseResource {
     return this._get<Beneficiary>(`/v1/beneficiaries/${id}`, options)
   }
 
+  /** CARD updates must include the complete card beneficiary object; entity type cannot change. */
   update(id: string, params: Partial<CreateBeneficiaryParams>, options?: RequestOptions): Promise<CreateBeneficiaryResponse> {
     return this._post<CreateBeneficiaryResponse>(`/v1/beneficiaries/${id}`, params, options)
   }

@@ -3,7 +3,7 @@ import type { RequestOptions, PaginatedResponse } from '../../types/common.js'
 import type {
   CreatePaymentIntentParams, UpdatePaymentIntentParams,
   ConfirmPaymentIntentParams, CapturePaymentIntentParams, CancelPaymentIntentParams,
-  PaymentIntent, ListPaymentIntentsParams,
+  PaymentIntent, PaymentIntentCaptureResponse, ListPaymentIntentsParams,
 } from './types.js'
 
 export class PaymentIntentsResource extends PaymentBaseResource {
@@ -27,8 +27,8 @@ export class PaymentIntentsResource extends PaymentBaseResource {
     return this._post<PaymentIntent>(`/v2/payment_intents/${id}/confirm`, params ?? {}, options)
   }
 
-  capture(id: string, params?: CapturePaymentIntentParams, options?: RequestOptions): Promise<PaymentIntent> {
-    return this._post<PaymentIntent>(`/v2/payment_intents/${id}/capture`, params ?? {}, options)
+  capture(id: string, params?: CapturePaymentIntentParams, options?: RequestOptions): Promise<PaymentIntentCaptureResponse> {
+    return this._post<PaymentIntentCaptureResponse>(`/v2/payment_intents/${id}/capture`, params ?? {}, options)
   }
 
   cancel(id: string, params?: CancelPaymentIntentParams, options?: RequestOptions): Promise<PaymentIntent> {

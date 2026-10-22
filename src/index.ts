@@ -150,6 +150,10 @@ export type {
   // Payment Methods
   ListPaymentMethodsParams,
   PaymentMethod,
+  PaymentMethodFieldRule,
+  ListPaymentMethodsResponse,
+  ValidatePayoutParams,
+  ValidatePayoutResponse,
   // Exchange Rates
   RateItem,
   ExchangeRatesData,
@@ -210,6 +214,8 @@ export type {
   DeliveryAddress,
   ResidentialAddress,
   IdentityDocument,
+  CardholderIdentity,
+  ResidentialAddressResponse,
   KycVerification,
   KycProof,
   CreateCardholderParams,
@@ -253,6 +259,9 @@ export type {
 export type {
   // Payment Intents
   PaymentIntentStatus,
+  AuthorizationType,
+  CaptureRecord,
+  PaymentIntentCaptureResponse,
   CreatePaymentIntentParams,
   UpdatePaymentIntentParams,
   ConfirmPaymentIntentParams,

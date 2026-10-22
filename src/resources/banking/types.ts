@@ -148,11 +148,14 @@ export type PayoutPurposeCode =
 
 export interface CreatePayoutParams {
   beneficiary_id?: string
-  source_currency: string
+  beneficiary?: CreateBeneficiaryParams
+  payout_reference?: string
+  payout_date?: string
+  source_currency?: string
   amount: string
   currency: string
   purpose_code: PayoutPurposeCode
-  fee_paid_by: FeePaymentMethod
+  fee_paid_by?: FeePaymentMethod
   payout_reason?: string
   reference?: string
   [key: string]: unknown
@@ -205,8 +208,9 @@ export interface ListPayoutsParams {
 export type BeneficiaryEntityType = 'INDIVIDUAL' | 'COMPANY'
 
 export interface BeneficiaryBankDetails {
-  bank_name: string
-  bank_address: string
+  card_expiry?: string
+  bank_name?: string
+  bank_address?: string
   bank_country_code: string
   account_holder: string
   account_currency_code: string
@@ -231,9 +235,9 @@ export interface BeneficiaryAddress {
 
 export interface CreateBeneficiaryParams {
   entity_type: BeneficiaryEntityType
-  payment_method: 'LOCAL' | 'SWIFT'
+  payment_method: 'LOCAL' | 'SWIFT' | 'CARD'
   bank_details: BeneficiaryBankDetails
-  address: BeneficiaryAddress
+  address?: Partial<BeneficiaryAddress>
   email?: string
   nickname?: string
   /** Required for INDIVIDUAL */
@@ -285,12 +289,13 @@ export interface ListBeneficiariesParams {
   nickname?: string
   currency?: string
   company_name?: string
+  payment_method?: 'LOCAL' | 'SWIFT' | 'CARD'
 }
 
 /** At least one non-empty account_number or iban; account_number takes precedence when both are sent. */
 export type CheckBeneficiaryParams = {
   entity_type: BeneficiaryEntityType
-  payment_method: 'LOCAL' | 'SWIFT'
+  payment_method: 'LOCAL' | 'SWIFT' | 'CARD'
   currency: string
   /** Conditional on payment method and currency. */
   bank_country_code?: string
@@ -494,11 +499,21 @@ export interface ListVirtualAccountsParams {
 // ─── Payment Methods ──────────────────────────────────────────────────────────
 
 export interface ListPaymentMethodsParams {
+  entity_type?: BeneficiaryEntityType
   currency: string
   country: string
 }
 
+/** The response schema permits data to be absent, but not null. */
+export interface ListPaymentMethodsResponse {
+  data?: PaymentMethod[]
+}
+
 export interface PaymentMethod {
+  country: string
+  currency: string
+  clearing_systems: string
+  validation_field?: (string | PaymentMethodFieldRule)[]
   payment_method: string
   name?: string
   description?: string
@@ -525,4 +540,33 @@ export interface ExchangeRatesResponse {
 
 export interface ListCurrentRatesParams {
   currency_pairs?: string[]
+}
+
+/** Rules are server metadata; their paths are not request field paths. */
+export interface PaymentMethodFieldRule {
+  value?: string
+  type?: string
+  required?: boolean
+  path?: string
+  rule?: { pattern?: string; type?: string; [key: string]: unknown }
+  children?: PaymentMethodFieldRule[]
+  [key: string]: unknown
+}
+
+export interface ValidatePayoutParams {
+  beneficiary_id: string
+  currency: string
+  amount: string
+  fee_paid_by: FeePaymentMethod
+}
+
+/** Preflight does not reserve funds or guarantee a later payout. */
+export interface ValidatePayoutResponse {
+  currency?: string
+  amount?: string
+  fee_amount?: string
+  total_amount?: string
+  channel_code?: string
+  sufficient_funds?: boolean
+  beneficiary_valid?: boolean
 }

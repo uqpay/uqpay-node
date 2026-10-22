@@ -5,6 +5,7 @@ import type { RequestOptions } from '../../types/common.js'
 export class AdditionalDocsResource extends BaseResource {
   /**
    * Get the list of required and optional documents for a given country and business type.
+   * @deprecated Retained for existing integrations; do not use for new integrations.
    * GET /v1/accounts/get_additional
    */
   get(params: GetAdditionalDocsParams, options?: RequestOptions): Promise<AdditionalDocument[]> {
